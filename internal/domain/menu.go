@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,17 +16,17 @@ type Menu struct {
 }
 
 type MenuRepository interface {
-	GetAll() ([]Menu, error)
-	Create(menu Menu) (Menu, error)
-	Get(id string) (Menu, error)
-	Update(menu Menu) (Menu, error)
-	Delete(id string) error
+	GetAll(ctx context.Context) ([]Menu, error)
+	Create(ctx context.Context, menu Menu) (Menu, error)
+	Get(ctx context.Context, id string) (Menu, error)
+	Update(ctx context.Context, menu Menu) (Menu, error)
+	Delete(ctx context.Context, id string) error
 }
 
 type MenuUsecase interface {
-	GetAll() ([]Menu, error)
-	Create(menu Menu) (Menu, error)
-	Get(id string) (Menu, error)
-	Update(menu Menu) (Menu, error)
-	Delete(id string) error
+	GetAll(ctx context.Context) ([]Menu, error)
+	Create(ctx context.Context, menu Menu) (Menu, error)
+	Get(ctx context.Context, id string) (Menu, error)
+	Update(ctx context.Context, menu Menu) (Menu, error)
+	Delete(ctx context.Context, id string) error
 }

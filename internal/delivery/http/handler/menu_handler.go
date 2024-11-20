@@ -23,44 +23,85 @@ func NewMenuHandler(menuUsecase domain.MenuUsecase) *MenuHandler {
 	}
 }
 
+// func (h *MenuHandler) GetAll(w http.ResponseWriter, r *http.Request) {
+// 	menus, err := h.menuUsecase.GetAll()
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	utils.WriteJSON(w, http.StatusOK, menus)
+
+// }
+
+// func (h *MenuHandler) Create(w http.ResponseWriter, r *http.Request) {
+// 	var req dto.CreateMenuRequest
+
+// 	// Decode request body
+// 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+// 		logger.Log.WithError(err).Error("Error invalid request body")
+// 		utils.WriteErrorJSON(w, http.StatusBadRequest, "Invalid request body", nil)
+// 		return
+// 	}
+
+// 	// Validate request
+// 	if err := utils.ValidateStruct(req); len(err) > 0 {
+// 		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
+// 		utils.WriteErrorJSON(w, http.StatusBadRequest, "Validation failed", err)
+// 		return
+// 	}
+
+// 	// Convert DTO to domain
+// 	menu := domain.Menu{
+// 		Name:  req.Name,
+// 		Price: req.Price,
+// 	}
+
+// 	// Create menu
+// 	createdMenu, err := h.menuUsecase.Create(menu)
+// 	if err != nil {
+// 		logger.Log.WithError(err).Error("Error failed to create menu")
+// 		utils.WriteErrorJSON(w, http.StatusInternalServerError, "Failed to create menu", nil)
+// 		return
+// 	}
+
+// 	utils.WriteJSON(w, http.StatusCreated, createdMenu)
+// }
+
 func (h *MenuHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	menus, err := h.menuUsecase.GetAll()
+	ctx := r.Context()
+
+	menus, err := h.menuUsecase.GetAll(ctx)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	utils.WriteJSON(w, http.StatusOK, menus)
-
 }
 
 func (h *MenuHandler) Create(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var req dto.CreateMenuRequest
 
-	// Decode request body
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		logger.Log.WithError(err).Error("Error invalid request body")
 		utils.WriteErrorJSON(w, http.StatusBadRequest, "Invalid request body", nil)
 		return
 	}
 
-	// Validate request
 	if err := utils.ValidateStruct(req); len(err) > 0 {
-		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
 		utils.WriteErrorJSON(w, http.StatusBadRequest, "Validation failed", err)
 		return
 	}
 
-	// Convert DTO to domain
 	menu := domain.Menu{
 		Name:  req.Name,
 		Price: req.Price,
 	}
 
-	// Create menu
-	createdMenu, err := h.menuUsecase.Create(menu)
+	createdMenu, err := h.menuUsecase.Create(ctx, menu)
 	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to create menu")
 		utils.WriteErrorJSON(w, http.StatusInternalServerError, "Failed to create menu", nil)
 		return
 	}
@@ -69,8 +110,10 @@ func (h *MenuHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MenuHandler) Get(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	id := mux.Vars(r)["id"]
-	menu, err := h.menuUsecase.Get(id)
+	menu, err := h.menuUsecase.Get(ctx, id)
 
 	if err != nil {
 		logger.Log.WithError(err).Error("Error menu not found")
@@ -82,6 +125,7 @@ func (h *MenuHandler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MenuHandler) Update(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	stringID := mux.Vars(r)["id"]
 
 	id, err := uuid.Parse(stringID)
@@ -114,7 +158,7 @@ func (h *MenuHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update menu
-	updatedtedMenu, err := h.menuUsecase.Update(menu)
+	updatedtedMenu, err := h.menuUsecase.Update(ctx, menu)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to update menu")
 		utils.WriteErrorJSON(w, http.StatusInternalServerError, "Failed to update menu", nil)
@@ -125,6 +169,7 @@ func (h *MenuHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MenuHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	id := mux.Vars(r)["id"]
 
 	if _, err := uuid.Parse(id); err != nil {
@@ -133,7 +178,7 @@ func (h *MenuHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.menuUsecase.Delete(id)
+	err := h.menuUsecase.Delete(ctx, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			logger.Log.WithError(err).Error("Error menu not found")
