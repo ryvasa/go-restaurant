@@ -17,15 +17,15 @@ type Menu struct {
 type MenuRepository interface {
 	GetAll() ([]Menu, error)
 	Create(menu Menu) (Menu, error)
-	// GetByID(id int) (Menu, error)
-	// Update(menu Menu) error
-	// Delete(id int) error
+	Get(id string) (Menu, error)
+	Update(menu Menu) (Menu, error)
+	Delete(id string) error
 }
 
 type MenuUsecase interface {
 	GetAll() ([]Menu, error)
 	Create(menu Menu) (Menu, error)
-	// GetByID(id int) (Menu, error)
-	// Update(menu Menu) error
-	// Delete(id int) error
+	Get(id string) (Menu, error)
+	Update(menu Menu) (Menu, error)
+	Delete(id string) error
 }

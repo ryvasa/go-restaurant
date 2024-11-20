@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/ryvasa/go-restaurant/internal/domain"
@@ -34,6 +35,15 @@ func (r *menuRepository) GetAll() ([]domain.Menu, error) {
 	return menus, nil
 }
 
+func (r *menuRepository) Get(id string) (domain.Menu, error) {
+	menu := domain.Menu{}
+	err := r.db.QueryRow("SELECT id, name, price, created_at, updated_at FROM menu WHERE id = ?", id).Scan(&menu.ID, &menu.Name, &menu.Price, &menu.CreatedAt, &menu.UpdatedAt)
+	if err != nil {
+		return menu, err
+	}
+	return menu, nil
+}
+
 func (r *menuRepository) Create(menu domain.Menu) (domain.Menu, error) {
 	menu.ID = uuid.New()
 
@@ -43,11 +53,7 @@ func (r *menuRepository) Create(menu domain.Menu) (domain.Menu, error) {
 		return domain.Menu{}, err
 	}
 
-	// Ambil data yang baru dibuat
-	var createdMenu domain.Menu
-	err = r.db.QueryRow("SELECT id, name, price, created_at, updated_at FROM menu WHERE id = ?",
-		menu.ID).Scan(&createdMenu.ID, &createdMenu.Name, &createdMenu.Price,
-		&createdMenu.CreatedAt, &createdMenu.UpdatedAt)
+	createdMenu, err := r.Get(menu.ID.String())
 	if err != nil {
 		return domain.Menu{}, err
 	}
@@ -55,27 +61,39 @@ func (r *menuRepository) Create(menu domain.Menu) (domain.Menu, error) {
 	return createdMenu, nil
 }
 
-// func (r *menuRepository) GetByID(id int) (domain.Menu, error) {
-// 	menu := domain.Menu{}
-// 	err := r.db.QueryRow("SELECT id, name, price, created_at, updated_at FROM menus WHERE id = ?", id).Scan(&menu.ID, &menu.Name, &menu.Price, &menu.CreatedAt, &menu.UpdatedAt)
-// 	if err != nil {
-// 		return menu, err
-// 	}
-// 	return menu, nil
-// }
+func (r *menuRepository) Update(menu domain.Menu) (domain.Menu, error) {
+	menu.UpdatedAt = time.Now()
 
-// func (r *menuRepository) Update(menu domain.Menu) error {
-// 	_, err := r.db.Exec("UPDATE menus SET name = ?, price = ?, updated_at = ? WHERE id = ?", menu.Name, menu.Price, menu.UpdatedAt, menu.ID)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+	_, err := r.db.Exec("UPDATE menu SET name = ?, price = ?, updated_at = ? WHERE id = ?",
+		menu.Name, menu.Price, menu.UpdatedAt, menu.ID)
+	if err != nil {
+		return domain.Menu{}, err
+	}
 
-// func (r *menuRepository) Delete(id int) error {
-// 	_, err := r.db.Exec("DELETE FROM menus WHERE id = ?", id)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+	updatedMenu, err := r.Get(menu.ID.String())
+	if err != nil {
+		return domain.Menu{}, err
+	}
+
+	return updatedMenu, nil
+}
+
+func (r *menuRepository) Delete(id string) error {
+	result, err := r.db.Exec("DELETE FROM menu WHERE id = ?", id)
+	if err != nil {
+		return err
+	}
+
+	// Cek apakah ada baris yang terhapus
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	// Jika tidak ada baris yang terhapus, return error
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}

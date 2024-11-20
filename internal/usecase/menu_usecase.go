@@ -20,14 +20,14 @@ func (u *menuUsecase) Create(menu domain.Menu) (domain.Menu, error) {
 	return u.menuRepo.Create(menu)
 }
 
-// func (u *menuUsecase) GetByID(id int) (domain.Menu, error) {
-// 	return u.menuRepo.GetByID(id)
-// }
+func (u *menuUsecase) Get(id string) (domain.Menu, error) {
+	return u.menuRepo.Get(id)
+}
 
-// func (u *menuUsecase) Update(menu domain.Menu) error {
-// 	return u.menuRepo.Update(menu)
-// }
+func (u *menuUsecase) Update(menu domain.Menu) (domain.Menu, error) {
+	return u.menuRepo.Update(menu)
+}
 
-// func (u *menuUsecase) Delete(id int) error {
-// 	return u.menuRepo.Delete(id)
-// }
+func (u *menuUsecase) Delete(id string) error {
+	return u.menuRepo.Delete(id)
+}
