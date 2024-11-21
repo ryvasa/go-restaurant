@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"log" // atau gunakan logger yang Anda pakai
 	"net/http"
 )
 
@@ -21,7 +22,11 @@ func WriteJSON(w http.ResponseWriter, status int, payload interface{}) {
 
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(status)
-    json.NewEncoder(w).Encode(response)
+    if err := json.NewEncoder(w).Encode(response); err != nil {
+        log.Printf("Error encoding response: %v", err)
+        // Opsional: tulis response error
+        http.Error(w, "Error encoding response", http.StatusInternalServerError)
+    }
 }
 
 func WriteErrorJSON(w http.ResponseWriter, status int, message string, errors interface{}) {
@@ -33,5 +38,9 @@ func WriteErrorJSON(w http.ResponseWriter, status int, message string, errors in
 
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(status)
-    json.NewEncoder(w).Encode(response)
+    if err := json.NewEncoder(w).Encode(response); err != nil {
+        log.Printf("Error encoding response: %v", err)
+        // Opsional: tulis response error
+        http.Error(w, "Error encoding response", http.StatusInternalServerError)
+    }
 }

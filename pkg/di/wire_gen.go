@@ -17,7 +17,7 @@ import (
 
 // Injectors from wire.go:
 
-// InitializeMenuHandler initializes MenuHandler with dependencies
+// InitializeHandlers initializes Handlers with dependencies
 func InitializeHandlers() (*handler.Handlers, error) {
 	configConfig, err := config.LoadConfig()
 	if err != nil {
@@ -31,10 +31,15 @@ func InitializeHandlers() (*handler.Handlers, error) {
 	menuRepository := repository.NewMenuRepository(db)
 	menuUsecase := usecase.NewMenuUsecase(menuRepository)
 	menuHandlerImpl := handler.NewMenuHandler(menuUsecase)
-	handlers := handler.NewHandlers(menuHandlerImpl)
+	userRepository := repository.NewUserRepository(db)
+	userUsecase := usecase.NewUserUsecase(userRepository)
+	userHandlerImpl := handler.NewUserHandler(userUsecase)
+	handlers := handler.NewHandlers(menuHandlerImpl, userHandlerImpl)
 	return handlers, nil
 }
 
 // wire.go:
 
 var menuSet = wire.NewSet(repository.NewMenuRepository, usecase.NewMenuUsecase, handler.NewMenuHandler)
+
+var userSet = wire.NewSet(repository.NewUserRepository, usecase.NewUserUsecase, handler.NewUserHandler)

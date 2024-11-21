@@ -42,22 +42,37 @@ func (h *MenuHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateMenuRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		logger.Log.WithError(err).Error("Error invalid request body")
 		utils.WriteErrorJSON(w, http.StatusBadRequest, "Invalid request body", nil)
 		return
 	}
 
 	if err := utils.ValidateStruct(req); len(err) > 0 {
+		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
 		utils.WriteErrorJSON(w, http.StatusBadRequest, "Validation failed", err)
 		return
 	}
 
+	id, err := uuid.Parse(req.Restaurant)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid id format")
+		utils.WriteErrorJSON(w, http.StatusBadRequest, "Invalid request id", nil)
+		return
+	}
+
 	menu := domain.Menu{
-		Name:  req.Name,
-		Price: req.Price,
+		ID:          uuid.New(),
+		Name:        req.Name,
+		Price:       req.Price,
+		Restaurant:  id,
+		Description: req.Description,
+		Category:    req.Category,
+		ImageURL:    req.ImageURL,
 	}
 
 	createdMenu, err := h.menuUsecase.Create(ctx, menu)
 	if err != nil {
+		logger.Log.WithError(err).Error("Error failed to create menu")
 		utils.WriteErrorJSON(w, http.StatusInternalServerError, "Failed to create menu", nil)
 		return
 	}
@@ -108,9 +123,22 @@ func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 
 	// Convert DTO to domain
 	menu := domain.Menu{
-		ID:    id,
-		Name:  req.Name,
-		Price: req.Price,
+		ID:          id,
+		Name:        req.Name,
+		Price:       req.Price,
+		Description: req.Description,
+		Category:    req.Category,
+		ImageURL:    req.ImageURL,
+	}
+
+	if req.Restaurant != "" {
+		restaurantID, err := uuid.Parse(req.Restaurant)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error invalid restaurant id format")
+			utils.WriteErrorJSON(w, http.StatusBadRequest, "Invalid restaurant id", nil)
+			return
+		}
+		menu.Restaurant = restaurantID
 	}
 
 	// Update menu

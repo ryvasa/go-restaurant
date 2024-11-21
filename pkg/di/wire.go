@@ -18,15 +18,20 @@ var menuSet = wire.NewSet(
 	handler.NewMenuHandler,
 )
 
-// InitializeMenuHandler initializes MenuHandler with dependencies
+var userSet = wire.NewSet(
+	repository.NewUserRepository,
+	usecase.NewUserUsecase,
+	handler.NewUserHandler,
+)
+
+// InitializeHandlers initializes Handlers with dependencies
 func InitializeHandlers() (*handler.Handlers, error) {
 	wire.Build(
 		config.LoadConfig,
 		database.ProvideDSN,
 		database.NewMySQLConnection,
 		menuSet,
-		// orderSet,
-		// userSet,
+		userSet,
 		handler.NewHandlers,
 	)
 	return &handler.Handlers{}, nil
