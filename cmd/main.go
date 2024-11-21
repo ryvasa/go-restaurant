@@ -5,9 +5,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/delivery/http/routes"
-	"github.com/ryvasa/go-restaurant/internal/repository"
-	"github.com/ryvasa/go-restaurant/internal/usecase"
 	"github.com/ryvasa/go-restaurant/pkg/database"
+	"github.com/ryvasa/go-restaurant/pkg/di"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
 )
 
@@ -19,14 +18,10 @@ func main() {
 	}
 	defer db.Close()
 
-	// Init repositories
-	menuRepo := repository.NewMenuRepository(db)
-
-	// Init usecases
-	menuUsecase := usecase.NewMenuUsecase(menuRepo)
+	menuHandler := di.InitializeMenuHandler(db)
 
 	r := mux.NewRouter()
-	routes.SetupRoutes(r, menuUsecase)
+	routes.SetupRoutes(r, menuHandler)
 
 	// Start server
 	logger.Log.Info("Server starting on :8080")

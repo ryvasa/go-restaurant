@@ -62,23 +62,6 @@ func (r *menuRepository) Get(ctx context.Context, id string) (domain.Menu, error
 	return menu, nil
 }
 
-// func (r *menuRepository) Create(menu domain.Menu) (domain.Menu, error) {
-// 	menu.ID = uuid.New()
-
-// 	_, err := r.db.Exec("INSERT INTO menu (id, name, price) VALUES (?, ?, ?)",
-// 		menu.ID, menu.Name, menu.Price)
-// 	if err != nil {
-// 		return domain.Menu{}, err
-// 	}
-
-// 	createdMenu, err := r.Get(menu.ID.String())
-// 	if err != nil {
-// 		return domain.Menu{}, err
-// 	}
-
-// 	return createdMenu, nil
-// }
-
 func (r *menuRepository) Update(ctx context.Context, menu domain.Menu) (domain.Menu, error) {
 	menu.UpdatedAt = time.Now()
 

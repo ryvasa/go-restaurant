@@ -6,10 +6,10 @@ import (
 	"github.com/ryvasa/go-restaurant/internal/domain"
 )
 
-func SetupRoutes(r *mux.Router, menuUsecase domain.MenuUsecase) {
+func SetupRoutes(r *mux.Router, menuHandler domain.MenuHandler) {
 	// Setup menu routes
 	r.Use(middleware.LoggingMiddleware)
-	MenuRoutes(r, menuUsecase)
+	MenuRoutes(r, menuHandler)
 
 	// Bisa tambah route lain
 	// SetupUserRoutes(r, userUsecase)

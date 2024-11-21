@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/google/uuid"
@@ -29,4 +30,12 @@ type MenuUsecase interface {
 	Get(ctx context.Context, id string) (Menu, error)
 	Update(ctx context.Context, menu Menu) (Menu, error)
 	Delete(ctx context.Context, id string) error
+}
+
+type MenuHandler interface {
+	GetAll(w http.ResponseWriter, r *http.Request)
+	Create(w http.ResponseWriter, r *http.Request)
+	Get(w http.ResponseWriter, r *http.Request)
+	Update(w http.ResponseWriter, r *http.Request)
+	Delete(w http.ResponseWriter, r *http.Request)
 }
