@@ -7,18 +7,34 @@
 package di
 
 import (
-	"database/sql"
+	"github.com/google/wire"
 	"github.com/ryvasa/go-restaurant/internal/delivery/http/handler"
 	"github.com/ryvasa/go-restaurant/internal/repository"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
+	"github.com/ryvasa/go-restaurant/pkg/config"
+	"github.com/ryvasa/go-restaurant/pkg/database"
 )
 
 // Injectors from wire.go:
 
-// InitializeUserHandler initializes UserHandler with dependencies
-func InitializeMenuHandler(db *sql.DB) *handler.MenuHandler {
+// InitializeMenuHandler initializes MenuHandler with dependencies
+func InitializeHandlers() (*handler.Handlers, error) {
+	configConfig, err := config.LoadConfig()
+	if err != nil {
+		return nil, err
+	}
+	string2 := database.ProvideDSN(configConfig)
+	db, err := database.NewMySQLConnection(string2)
+	if err != nil {
+		return nil, err
+	}
 	menuRepository := repository.NewMenuRepository(db)
 	menuUsecase := usecase.NewMenuUsecase(menuRepository)
 	menuHandler := handler.NewMenuHandler(menuUsecase)
-	return menuHandler
+	handlers := handler.NewHandlers(menuHandler)
+	return handlers, nil
 }
+
+// wire.go:
+
+var menuSet = wire.NewSet(repository.NewMenuRepository, usecase.NewMenuUsecase, handler.NewMenuHandler)

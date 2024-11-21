@@ -5,23 +5,19 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/delivery/http/routes"
-	"github.com/ryvasa/go-restaurant/pkg/database"
 	"github.com/ryvasa/go-restaurant/pkg/di"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
 )
 
 func main() {
-	// Setup database connection
-	db, err := database.NewMySQLConnection("root:123@tcp(localhost:3306)/go_restaurant?parseTime=true")
+	// Initialize dependencies using Wire
+	handlers, err := di.InitializeHandlers()
 	if err != nil {
-		logger.Log.Fatal("Failed to connect to database:", err)
+		logger.Log.Fatal("Failed to initialize dependencies:", err)
 	}
-	defer db.Close()
-
-	menuHandler := di.InitializeMenuHandler(db)
 
 	r := mux.NewRouter()
-	routes.SetupRoutes(r, menuHandler)
+	routes.NewRoutes(r, handlers)
 
 	// Start server
 	logger.Log.Info("Server starting on :8080")
