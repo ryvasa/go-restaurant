@@ -30,8 +30,8 @@ func InitializeHandlers() (*handler.Handlers, error) {
 	}
 	menuRepository := repository.NewMenuRepository(db)
 	menuUsecase := usecase.NewMenuUsecase(menuRepository)
-	menuHandler := handler.NewMenuHandler(menuUsecase)
-	handlers := handler.NewHandlers(menuHandler)
+	menuHandlerImpl := handler.NewMenuHandler(menuUsecase)
+	handlers := handler.NewHandlers(menuHandlerImpl)
 	return handlers, nil
 }
 

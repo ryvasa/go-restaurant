@@ -2,10 +2,10 @@ package routes
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/ryvasa/go-restaurant/internal/domain"
+	"github.com/ryvasa/go-restaurant/internal/delivery/http/handler"
 )
 
-func MenuRoutes(r *mux.Router, menuHandler domain.MenuHandler) {
+func MenuRoutes(r *mux.Router, menuHandler handler.MenuHandler) {
 
 	r.HandleFunc("/menu", menuHandler.GetAll).Methods("GET")
 	r.HandleFunc("/menu", menuHandler.Create).Methods("POST")
