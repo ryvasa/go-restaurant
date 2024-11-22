@@ -7,6 +7,7 @@ import (
 	"github.com/ryvasa/go-restaurant/internal/repository"
 )
 
+// TODO: update move bisnis logic to user usecase
 type UserUsecaseImpl struct {
 	userRepo repository.UserRepository
 }

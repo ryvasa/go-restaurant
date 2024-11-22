@@ -28,11 +28,12 @@ func (h *UserHandlerImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	users, err := h.userUsecase.GetAll(ctx)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logger.Log.WithError(err).Error("Error failed to get all users")
+		utils.Response(w, http.StatusInternalServerError, nil, err.Error())
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, users)
+	utils.Response(w, http.StatusOK, users, nil)
 }
 
 func (h *UserHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
@@ -42,20 +43,20 @@ func (h *UserHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.WithError(err).Error("Error invalid request body")
-		utils.WriteErrorJSON(w, http.StatusBadRequest, "Invalid request body", nil)
+		utils.Response(w, http.StatusBadRequest, nil, err.Error())
 		return
 	}
 
 	if err := utils.ValidateStruct(req); len(err) > 0 {
 		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
-		utils.WriteErrorJSON(w, http.StatusBadRequest, "Validation failed", err)
+		utils.Response(w, http.StatusBadRequest, nil, err)
 		return
 	}
 
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error hashing password")
-		utils.WriteErrorJSON(w, http.StatusInternalServerError, "Error processing request", nil)
+		utils.Response(w, http.StatusInternalServerError, nil, err.Error())
 		return
 	}
 
@@ -70,11 +71,11 @@ func (h *UserHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 	createdUser, err := h.userUsecase.Create(ctx, user)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to create user")
-		utils.WriteErrorJSON(w, http.StatusInternalServerError, "Failed to create user", nil)
+		utils.Response(w, http.StatusInternalServerError, nil, err.Error())
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusCreated, createdUser)
+	utils.Response(w, http.StatusCreated, createdUser, nil)
 }
 
 func (h *UserHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
@@ -83,11 +84,12 @@ func (h *UserHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	user, err := h.userUsecase.Get(ctx, id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logger.Log.WithError(err).Error("Error failed to find user")
+		utils.Response(w, http.StatusNotFound, nil, err.Error())
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, user)
+	utils.Response(w, http.StatusOK, user, nil)
 }
 func (h *UserHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -96,20 +98,20 @@ func (h *UserHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(stringID)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error invalid id format")
-		utils.WriteErrorJSON(w, http.StatusBadRequest, "Invalid request id", nil)
+		utils.Response(w, http.StatusBadRequest, nil, err.Error())
 		return
 	}
 
 	var req dto.UpdateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.WithError(err).Error("Error invalid request body")
-		utils.WriteErrorJSON(w, http.StatusBadRequest, "Invalid request body", nil)
+		utils.Response(w, http.StatusBadRequest, nil, err.Error())
 		return
 	}
 
 	if err := utils.ValidateStruct(req); len(err) > 0 {
 		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
-		utils.WriteErrorJSON(w, http.StatusBadRequest, "Validation failed", err)
+		utils.Response(w, http.StatusBadRequest, nil, err)
 		return
 	}
 
@@ -121,12 +123,11 @@ func (h *UserHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 		Phone: req.Phone,
 	}
 
-	// Hash password hanya jika password diupdate
 	if req.Password != "" {
 		hashedPassword, err := utils.HashPassword(req.Password)
 		if err != nil {
 			logger.Log.WithError(err).Error("Error hashing password")
-			utils.WriteErrorJSON(w, http.StatusInternalServerError, "Error processing request", nil)
+			utils.Response(w, http.StatusInternalServerError, nil, err.Error())
 			return
 		}
 		user.Password = hashedPassword
@@ -135,9 +136,9 @@ func (h *UserHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	updatedUser, err := h.userUsecase.Update(ctx, user)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to update user")
-		utils.WriteErrorJSON(w, http.StatusInternalServerError, "Failed to update user", nil)
+		utils.Response(w, http.StatusInternalServerError, nil, err.Error())
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, updatedUser)
+	utils.Response(w, http.StatusOK, updatedUser, nil)
 }

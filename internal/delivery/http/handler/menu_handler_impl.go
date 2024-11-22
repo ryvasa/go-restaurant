@@ -29,11 +29,12 @@ func (h *MenuHandlerImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	menus, err := h.menuUsecase.GetAll(ctx)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logger.Log.WithError(err).Error("Error failed to get all menu")
+		utils.Response(w, http.StatusInternalServerError, nil, err.Error())
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, menus)
+	utils.Response(w, http.StatusOK, menus, nil)
 }
 
 func (h *MenuHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
@@ -43,20 +44,20 @@ func (h *MenuHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.WithError(err).Error("Error invalid request body")
-		utils.WriteErrorJSON(w, http.StatusBadRequest, "Invalid request body", nil)
+		utils.Response(w, http.StatusBadRequest, nil, err.Error())
 		return
 	}
 
 	if err := utils.ValidateStruct(req); len(err) > 0 {
 		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
-		utils.WriteErrorJSON(w, http.StatusBadRequest, "Validation failed", err)
+		utils.Response(w, http.StatusBadRequest, nil, err)
 		return
 	}
 
 	id, err := uuid.Parse(req.Restaurant)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error invalid id format")
-		utils.WriteErrorJSON(w, http.StatusBadRequest, "Invalid request id", nil)
+		utils.Response(w, http.StatusBadRequest, nil, err.Error())
 		return
 	}
 
@@ -73,11 +74,11 @@ func (h *MenuHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 	createdMenu, err := h.menuUsecase.Create(ctx, menu)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to create menu")
-		utils.WriteErrorJSON(w, http.StatusInternalServerError, "Failed to create menu", nil)
+		utils.Response(w, http.StatusInternalServerError, nil, err.Error())
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusCreated, createdMenu)
+	utils.Response(w, http.StatusCreated, createdMenu, nil)
 }
 
 func (h *MenuHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
@@ -88,11 +89,11 @@ func (h *MenuHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		logger.Log.WithError(err).Error("Error menu not found")
-		utils.WriteErrorJSON(w, http.StatusNotFound, "Menu not found", nil)
+		utils.Response(w, http.StatusNotFound, nil, err.Error())
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, menu)
+	utils.Response(w, http.StatusOK, menu, nil)
 }
 
 func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +103,7 @@ func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(stringID)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error invalid id format")
-		utils.WriteErrorJSON(w, http.StatusBadRequest, "Invalid request id", nil)
+		utils.Response(w, http.StatusBadRequest, nil, err.Error())
 		return
 	}
 	var req dto.UpdateMenuRequest
@@ -110,14 +111,14 @@ func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	// Decode request body
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.WithError(err).Error("Error invalid request body")
-		utils.WriteErrorJSON(w, http.StatusBadRequest, "Invalid request body", nil)
+		utils.Response(w, http.StatusBadRequest, nil, err.Error())
 		return
 	}
 
 	// Validate request
 	if err := utils.ValidateStruct(req); len(err) > 0 {
 		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
-		utils.WriteErrorJSON(w, http.StatusBadRequest, "Validation failed", err)
+		utils.Response(w, http.StatusBadRequest, nil, err)
 		return
 	}
 
@@ -135,7 +136,7 @@ func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 		restaurantID, err := uuid.Parse(req.Restaurant)
 		if err != nil {
 			logger.Log.WithError(err).Error("Error invalid restaurant id format")
-			utils.WriteErrorJSON(w, http.StatusBadRequest, "Invalid restaurant id", nil)
+			utils.Response(w, http.StatusBadRequest, nil, err.Error())
 			return
 		}
 		menu.Restaurant = restaurantID
@@ -145,11 +146,11 @@ func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	updatedtedMenu, err := h.menuUsecase.Update(ctx, menu)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to update menu")
-		utils.WriteErrorJSON(w, http.StatusInternalServerError, "Failed to update menu", nil)
+		utils.Response(w, http.StatusInternalServerError, nil, err.Error())
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, updatedtedMenu)
+	utils.Response(w, http.StatusOK, updatedtedMenu, nil)
 }
 
 func (h *MenuHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
@@ -158,7 +159,7 @@ func (h *MenuHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 
 	if _, err := uuid.Parse(id); err != nil {
 		logger.Log.WithError(err).Error("Error invalid ID format")
-		utils.WriteErrorJSON(w, http.StatusBadRequest, "Invalid ID format", nil)
+		utils.Response(w, http.StatusBadRequest, nil, err.Error())
 		return
 	}
 
@@ -166,13 +167,13 @@ func (h *MenuHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == sql.ErrNoRows {
 			logger.Log.WithError(err).Error("Error menu not found")
-			utils.WriteErrorJSON(w, http.StatusNotFound, "Menu not found", nil)
+			utils.Response(w, http.StatusNotFound, nil, err.Error())
 			return
 		}
 		logger.Log.WithError(err).Error("Error failed to delete menu")
-		utils.WriteErrorJSON(w, http.StatusInternalServerError, "Failed to delete menu", nil)
+		utils.Response(w, http.StatusInternalServerError, nil, err.Error())
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	utils.Response(w, http.StatusNoContent, "Menu deleted", nil)
 }
