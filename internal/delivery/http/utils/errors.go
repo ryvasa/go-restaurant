@@ -1,36 +1,55 @@
 package utils
 
-import (
-	"database/sql"
-	"errors"
-)
+import "net/http"
+
 type AppError struct {
-    Code    string      `json:"code"`
-    Message string      `json:"message"`
-    Details interface{} `json:"details,omitempty"`
+	HttpStatus int         `json:"-"`                 // HTTP status code (tidak ditampilkan di response)
+	Code       string      `json:"code"`              // Error code internal
+	Message    string      `json:"message"`           // Pesan error untuk user
+	Details    interface{} `json:"details,omitempty"` // Detail tambahan (optional)
 }
 
-func NewAppError(code string, message string, details interface{}) *AppError {
-    return &AppError{
-        Code:    code,
-        Message: message,
-        Details: details,
-    }
+func (e AppError) Error() string {
+	return e.Message
 }
 
-const (
-    ErrInvalidRequest     = "INVALID_REQUEST"
-    ErrValidationFailed   = "VALIDATION_FAILED"
-    ErrResourceNotFound   = "RESOURCE_NOT_FOUND"
-    ErrInternalServer     = "INTERNAL_SERVER_ERROR"
-    ErrDuplicateResource  = "DUPLICATE_RESOURCE"
-)
-func HandleError(err error) *AppError {
-    switch {
-    case errors.Is(err, sql.ErrNoRows):
-        return NewAppError(ErrResourceNotFound, "Resource not found", nil)
-    // Handle more specific errors here
-    default:
-        return NewAppError(ErrInternalServer, "Internal server error", nil)
-    }
+// Helper functions untuk membuat error
+func NewValidationError(details interface{}) error {
+	return AppError{
+		HttpStatus: http.StatusBadRequest,
+		Code:       "VALIDATION_ERROR",
+		Message:    "Validation failed",
+		Details:    details,
+	}
+}
+
+func NewNotFoundError(message string) error {
+	return AppError{
+		HttpStatus: http.StatusNotFound,
+		Code:       "NOT_FOUND",
+		Message:    message,
+	}
+}
+
+func NewConflictError(message string) error {
+	return AppError{
+		HttpStatus: http.StatusConflict,
+		Code:       "CONFLICT",
+		Message:    message,
+	}
+}
+
+func NewInternalError(message string) error {
+	return AppError{
+		HttpStatus: http.StatusInternalServerError,
+		Code:       "INTERNAL_ERROR",
+		Message:    message,
+	}
+}
+
+func GetErrorStatus(err error) int {
+	if appErr, ok := err.(AppError); ok {
+		return appErr.HttpStatus
+	}
+	return http.StatusInternalServerError
 }
