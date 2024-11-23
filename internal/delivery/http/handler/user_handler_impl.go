@@ -27,7 +27,7 @@ func (h *UserHandlerImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	users, err := h.userUsecase.GetAll(ctx)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to get all users")
-		utils.Response(w, http.StatusInternalServerError, nil, err.Error())
+		utils.Response(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
@@ -41,7 +41,7 @@ func (h *UserHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userUsecase.Get(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to find user")
-		utils.Response(w, http.StatusNotFound, nil, err.Error())
+		utils.Response(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
@@ -61,8 +61,7 @@ func (h *UserHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 	createdUser, err := h.userUsecase.Create(ctx, req)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to create user")
-		status := utils.GetErrorStatus(err)
-		utils.Response(w, status, nil, err)
+		utils.Response(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
@@ -76,14 +75,14 @@ func (h *UserHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	var req dto.UpdateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.WithError(err).Error("Error invalid request body")
-		utils.Response(w, http.StatusBadRequest, nil, err.Error())
+		utils.Response(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
 	updatedUser, err := h.userUsecase.Update(ctx, id, req)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to update user")
-		utils.Response(w, http.StatusInternalServerError, nil, err.Error())
+		utils.Response(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
