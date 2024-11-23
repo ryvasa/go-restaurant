@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/ryvasa/go-restaurant/internal/domain"
+	"github.com/ryvasa/go-restaurant/internal/model/domain"
 )
 
 type UserRepositoryImpl struct {

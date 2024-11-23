@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/ryvasa/go-restaurant/internal/delivery/http/dto"
-	"github.com/ryvasa/go-restaurant/internal/delivery/http/utils"
+	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
+	"github.com/ryvasa/go-restaurant/utils"
 )
 
 type UserHandlerImpl struct {
@@ -27,11 +27,11 @@ func (h *UserHandlerImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	users, err := h.userUsecase.GetAll(ctx)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to get all users")
-		utils.Response(w, utils.GetErrorStatus(err), nil, err)
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
-	utils.Response(w, http.StatusOK, users, nil)
+	utils.HttpResponse(w, http.StatusOK, users, nil)
 }
 
 func (h *UserHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
@@ -41,11 +41,11 @@ func (h *UserHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userUsecase.Get(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to find user")
-		utils.Response(w, utils.GetErrorStatus(err), nil, err)
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
-	utils.Response(w, http.StatusOK, user, nil)
+	utils.HttpResponse(w, http.StatusOK, user, nil)
 }
 
 func (h *UserHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
@@ -54,18 +54,18 @@ func (h *UserHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.WithError(err).Error("Error invalid request body")
-		utils.Response(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid request body"))
+		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid request body"))
 		return
 	}
 
 	createdUser, err := h.userUsecase.Create(ctx, req)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to create user")
-		utils.Response(w, utils.GetErrorStatus(err), nil, err)
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
-	utils.Response(w, http.StatusCreated, createdUser, nil)
+	utils.HttpResponse(w, http.StatusCreated, createdUser, nil)
 }
 
 func (h *UserHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
@@ -75,16 +75,16 @@ func (h *UserHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	var req dto.UpdateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.WithError(err).Error("Error invalid request body")
-		utils.Response(w, utils.GetErrorStatus(err), nil, err)
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
 	updatedUser, err := h.userUsecase.Update(ctx, id, req)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to update user")
-		utils.Response(w, utils.GetErrorStatus(err), nil, err)
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
-	utils.Response(w, http.StatusOK, updatedUser, nil)
+	utils.HttpResponse(w, http.StatusOK, updatedUser, nil)
 }

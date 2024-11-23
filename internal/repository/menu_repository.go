@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/ryvasa/go-restaurant/internal/domain"
+	"github.com/ryvasa/go-restaurant/internal/model/domain"
 )
 
 type MenuRepository interface {

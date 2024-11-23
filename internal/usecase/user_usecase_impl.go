@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/ryvasa/go-restaurant/internal/delivery/http/dto"
-	"github.com/ryvasa/go-restaurant/internal/delivery/http/utils"
-	"github.com/ryvasa/go-restaurant/internal/domain"
+	"github.com/ryvasa/go-restaurant/internal/model/domain"
+	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/repository"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
+	"github.com/ryvasa/go-restaurant/utils"
 )
 
 type UserUsecaseImpl struct {
@@ -34,7 +34,7 @@ func (u *UserUsecaseImpl) GetAll(ctx context.Context) ([]domain.User, error) {
 func (u *UserUsecaseImpl) Create(ctx context.Context, req dto.CreateUserRequest) (domain.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	// Validasi input
+
 	if err := utils.ValidateStruct(req); len(err) > 0 {
 		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
 		return domain.User{}, utils.NewValidationError(err)
@@ -46,14 +46,12 @@ func (u *UserUsecaseImpl) Create(ctx context.Context, req dto.CreateUserRequest)
 		return domain.User{}, utils.NewConflictError("Email already exists")
 	}
 
-	// Hash password
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to hash password")
 		return domain.User{}, utils.NewInternalError("Failed to hash password")
 	}
 
-	// Buat user baru
 	user = domain.User{
 		ID:       uuid.New(),
 		Name:     req.Name,
@@ -79,14 +77,11 @@ func (u *UserUsecaseImpl) Get(ctx context.Context, id string) (domain.User, erro
 func (u *UserUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateUserRequest) (domain.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	// Validasi input
 	if err := utils.ValidateStruct(req); len(err) > 0 {
-		//logger
 		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
 		return domain.User{}, utils.NewValidationError(err)
 	}
 
-	// Parse UUID
 	userID, err := uuid.Parse(id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error invalid id format")
@@ -99,7 +94,6 @@ func (u *UserUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateU
 		return domain.User{}, utils.NewNotFoundError("User not found")
 	}
 
-	// Siapkan data update
 	user := domain.User{
 		ID:    userID,
 		Name:  req.Name,
@@ -108,7 +102,6 @@ func (u *UserUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateU
 		Phone: req.Phone,
 	}
 
-	// Hash password jika ada
 	if req.Password != "" {
 		hashedPassword, err := utils.HashPassword(req.Password)
 		if err != nil {
