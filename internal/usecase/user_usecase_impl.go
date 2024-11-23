@@ -88,13 +88,19 @@ func (u *UserUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateU
 		return domain.User{}, utils.NewValidationError("Invalid id format")
 	}
 
-	_, err = u.userRepo.GetByEmail(ctx, req.Email)
+	_, err = u.userRepo.Get(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error not found")
 		return domain.User{}, utils.NewNotFoundError("User not found")
 	}
 
-	user := domain.User{
+	user, err := u.userRepo.GetByEmail(ctx, req.Email)
+	if user.Email == req.Email {
+		logger.Log.WithError(err).Error("Error email already exists")
+		return domain.User{}, utils.NewConflictError("Email already exists")
+	}
+
+	user = domain.User{
 		ID:    userID,
 		Name:  req.Name,
 		Email: req.Email,
