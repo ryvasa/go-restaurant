@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/ryvasa/go-restaurant/internal/delivery/http/dto"
-	"github.com/ryvasa/go-restaurant/internal/delivery/http/utils"
+	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
+	"github.com/ryvasa/go-restaurant/utils"
 )
 
 type MenuHandlerImpl struct {
@@ -27,11 +27,11 @@ func (h *MenuHandlerImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	menus, err := h.menuUsecase.GetAll(ctx)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to get all menu")
-		utils.Response(w, utils.GetErrorStatus(err), nil, err)
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
-	utils.Response(w, http.StatusOK, menus, nil)
+	utils.HttpResponse(w, http.StatusOK, menus, nil)
 }
 
 func (h *MenuHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
@@ -41,18 +41,18 @@ func (h *MenuHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.WithError(err).Error("Error invalid request body")
-		utils.Response(w, utils.GetErrorStatus(err), nil, err)
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
 	createdMenu, err := h.menuUsecase.Create(ctx, req)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to create menu")
-		utils.Response(w, utils.GetErrorStatus(err), nil, err)
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
-	utils.Response(w, http.StatusCreated, createdMenu, nil)
+	utils.HttpResponse(w, http.StatusCreated, createdMenu, nil)
 }
 
 func (h *MenuHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
@@ -63,11 +63,11 @@ func (h *MenuHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		logger.Log.WithError(err).Error("Error menu not found")
-		utils.Response(w, utils.GetErrorStatus(err), nil, err)
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
-	utils.Response(w, http.StatusOK, menu, nil)
+	utils.HttpResponse(w, http.StatusOK, menu, nil)
 }
 
 func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
@@ -75,22 +75,20 @@ func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	var req dto.UpdateMenuRequest
 
-	// Decode request body
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.WithError(err).Error("Error invalid request body")
-		utils.Response(w, utils.GetErrorStatus(err), nil, err)
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
-	// Update menu
 	updatedtedMenu, err := h.menuUsecase.Update(ctx, id, req)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to update menu")
-		utils.Response(w, utils.GetErrorStatus(err), nil, err)
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
-	utils.Response(w, http.StatusOK, updatedtedMenu, nil)
+	utils.HttpResponse(w, http.StatusOK, updatedtedMenu, nil)
 }
 
 func (h *MenuHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
@@ -100,9 +98,9 @@ func (h *MenuHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 	err := h.menuUsecase.Delete(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to delete menu")
-		utils.Response(w, utils.GetErrorStatus(err), nil, err)
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 
-	utils.Response(w, http.StatusNoContent, "Menu deleted", nil)
+	utils.HttpResponse(w, http.StatusNoContent, "Menu deleted", nil)
 }

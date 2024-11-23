@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/ryvasa/go-restaurant/internal/delivery/http/dto"
-	"github.com/ryvasa/go-restaurant/internal/delivery/http/utils"
-	"github.com/ryvasa/go-restaurant/internal/domain"
+	"github.com/ryvasa/go-restaurant/internal/model/domain"
+	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/repository"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
+	"github.com/ryvasa/go-restaurant/utils"
 )
 
 type MenuUsecaseImpl struct {
@@ -34,7 +34,6 @@ func (u *MenuUsecaseImpl) Create(ctx context.Context, req dto.CreateMenuRequest)
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	if err := utils.ValidateStruct(req); len(err) > 0 {
-		//logger
 		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
 		return domain.Menu{}, utils.NewValidationError(err)
 	}
@@ -73,7 +72,6 @@ func (u *MenuUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateM
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	if err := utils.ValidateStruct(req); len(err) > 0 {
-		//logger
 		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
 		return domain.Menu{}, utils.NewValidationError(err)
 	}
@@ -90,7 +88,6 @@ func (u *MenuUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateM
 		return domain.Menu{}, utils.NewNotFoundError("Menu not found")
 	}
 
-	// Convert DTO to domain
 	menu := domain.Menu{
 		ID:          menuId,
 		Name:        req.Name,

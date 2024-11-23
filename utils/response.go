@@ -4,11 +4,18 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/ryvasa/go-restaurant/internal/domain"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
 )
 
-func Response(w http.ResponseWriter, status int, payload interface{}, err interface{}) {
+type Response struct {
+	Status  int         `json:"status"`
+	Success bool        `json:"success"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
+	Errors  interface{} `json:"errors,omitempty"`
+}
+
+func HttpResponse(w http.ResponseWriter, status int, payload interface{}, err interface{}) {
 	var errorResponse interface{}
 
 	if err != nil {
@@ -27,7 +34,7 @@ func Response(w http.ResponseWriter, status int, payload interface{}, err interf
 		}
 	}
 
-	response := domain.Response{
+	response := Response{
 		Status:  status,
 		Success: status < 400,
 		Message: http.StatusText(status),

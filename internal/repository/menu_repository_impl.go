@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/ryvasa/go-restaurant/internal/domain"
+	"github.com/ryvasa/go-restaurant/internal/model/domain"
 )
 
 type MenuRepositoryImpl struct {
@@ -62,51 +62,51 @@ func (r *MenuRepositoryImpl) Get(ctx context.Context, id string) (domain.Menu, e
 }
 
 func (r *MenuRepositoryImpl) Update(ctx context.Context, menu domain.Menu) (domain.Menu, error) {
-    // Ambil data menu yang ada
-    existingMenu, err := r.Get(ctx, menu.ID.String())
-    if err != nil {
-        return domain.Menu{}, err
-    }
+	// Ambil data menu yang ada
+	existingMenu, err := r.Get(ctx, menu.ID.String())
+	if err != nil {
+		return domain.Menu{}, err
+	}
 
-    // Update hanya field yang tidak kosong
-    if menu.Name != "" {
-        existingMenu.Name = menu.Name
-    }
-    if menu.Description != "" {
-        existingMenu.Description = menu.Description
-    }
-    if menu.Price > 0 {
-        existingMenu.Price = menu.Price
-    }
-    if menu.Category != "" {
-        existingMenu.Category = menu.Category
-    }
-    if menu.ImageURL != "" {
-        existingMenu.ImageURL = menu.ImageURL
-    }
-    if menu.Restaurant != uuid.Nil {
-        existingMenu.Restaurant = menu.Restaurant
-    }
+	// Update hanya field yang tidak kosong
+	if menu.Name != "" {
+		existingMenu.Name = menu.Name
+	}
+	if menu.Description != "" {
+		existingMenu.Description = menu.Description
+	}
+	if menu.Price > 0 {
+		existingMenu.Price = menu.Price
+	}
+	if menu.Category != "" {
+		existingMenu.Category = menu.Category
+	}
+	if menu.ImageURL != "" {
+		existingMenu.ImageURL = menu.ImageURL
+	}
+	if menu.Restaurant != uuid.Nil {
+		existingMenu.Restaurant = menu.Restaurant
+	}
 
-    existingMenu.UpdatedAt = time.Now()
+	existingMenu.UpdatedAt = time.Now()
 
-    // Eksekusi query update
-    _, err = r.db.ExecContext(ctx,
-        "UPDATE menu SET name = ?, price = ?, updated_at = ?, restaurant_id = ?, description = ?, category = ?, image_url = ? WHERE id = ?",
-        existingMenu.Name,
-        existingMenu.Price,
-        existingMenu.UpdatedAt,
-        existingMenu.Restaurant,
-        existingMenu.Description,
-        existingMenu.Category,
-        existingMenu.ImageURL,
-        existingMenu.ID,
-    )
-    if err != nil {
-        return domain.Menu{}, err
-    }
+	// Eksekusi query update
+	_, err = r.db.ExecContext(ctx,
+		"UPDATE menu SET name = ?, price = ?, updated_at = ?, restaurant_id = ?, description = ?, category = ?, image_url = ? WHERE id = ?",
+		existingMenu.Name,
+		existingMenu.Price,
+		existingMenu.UpdatedAt,
+		existingMenu.Restaurant,
+		existingMenu.Description,
+		existingMenu.Category,
+		existingMenu.ImageURL,
+		existingMenu.ID,
+	)
+	if err != nil {
+		return domain.Menu{}, err
+	}
 
-    return r.Get(ctx, existingMenu.ID.String())
+	return r.Get(ctx, existingMenu.ID.String())
 }
 
 func (r *MenuRepositoryImpl) Delete(ctx context.Context, id string) error {

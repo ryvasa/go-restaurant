@@ -3,8 +3,8 @@ package usecase
 import (
 	"context"
 
-	"github.com/ryvasa/go-restaurant/internal/delivery/http/dto"
-	"github.com/ryvasa/go-restaurant/internal/domain"
+	"github.com/ryvasa/go-restaurant/internal/model/domain"
+	"github.com/ryvasa/go-restaurant/internal/model/dto"
 )
 
 type UserUsecase interface {
