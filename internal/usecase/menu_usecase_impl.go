@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"mime/multipart"
 	"time"
 
 	"github.com/google/uuid"
@@ -29,29 +30,38 @@ func (u *MenuUsecaseImpl) GetAll(ctx context.Context) ([]domain.Menu, error) {
 	}
 	return users, nil
 }
-
-func (u *MenuUsecaseImpl) Create(ctx context.Context, req dto.CreateMenuRequest) (domain.Menu, error) {
+func (u *MenuUsecaseImpl) Create(ctx context.Context, req dto.CreateMenuRequest, file multipart.File) (domain.Menu, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
+
+	// Validate request
 	if err := utils.ValidateStruct(req); len(err) > 0 {
 		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
 		return domain.Menu{}, utils.NewValidationError(err)
 	}
 
-	id, err := uuid.Parse(req.Restaurant)
+	// Parse restaurant ID
+	restaurantID, err := uuid.Parse(req.Restaurant)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error invalid restaurant id format")
 		return domain.Menu{}, utils.NewValidationError("Invalid restaurant id format")
+	}
+
+	// Upload file after validation
+	imagePath, err := utils.UploadFile(file, req.Image, "menu")
+	if err != nil {
+		logger.Log.WithError(err).Error("Error uploading file")
+		return domain.Menu{}, utils.NewInternalError("Failed to upload image")
 	}
 
 	menu := domain.Menu{
 		ID:          uuid.New(),
 		Name:        req.Name,
 		Price:       req.Price,
-		Restaurant:  id,
+		Restaurant:  restaurantID,
 		Description: req.Description,
 		Category:    req.Category,
-		ImageURL:    req.ImageURL,
+		ImageURL:    imagePath,
 	}
 
 	return u.menuRepo.Create(ctx, menu)
@@ -68,9 +78,10 @@ func (u *MenuUsecaseImpl) Get(ctx context.Context, id string) (domain.Menu, erro
 	return user, nil
 }
 
-func (u *MenuUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateMenuRequest) (domain.Menu, error) {
+func (u *MenuUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateMenuRequest, file multipart.File) (domain.Menu, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
+
 	if err := utils.ValidateStruct(req); len(err) > 0 {
 		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
 		return domain.Menu{}, utils.NewValidationError(err)
@@ -82,7 +93,7 @@ func (u *MenuUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateM
 		return domain.Menu{}, utils.NewValidationError("Invalid id format")
 	}
 
-	_, err = u.menuRepo.Get(ctx, id)
+	existingMenu, err := u.menuRepo.Get(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error menu not found")
 		return domain.Menu{}, utils.NewNotFoundError("Menu not found")
@@ -94,7 +105,17 @@ func (u *MenuUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateM
 		Price:       req.Price,
 		Description: req.Description,
 		Category:    req.Category,
-		ImageURL:    req.ImageURL,
+		ImageURL:    existingMenu.ImageURL, // Keep existing image if no new image
+	}
+
+	// Upload new image if provided
+	if file != nil && req.Image != nil {
+		imagePath, err := utils.UploadFile(file, req.Image, "menu")
+		if err != nil {
+			logger.Log.WithError(err).Error("Error uploading file")
+			return domain.Menu{}, utils.NewInternalError("Failed to upload image")
+		}
+		menu.ImageURL = imagePath
 	}
 
 	if req.Restaurant != "" {

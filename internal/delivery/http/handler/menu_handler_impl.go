@@ -1,8 +1,9 @@
 package handler
 
 import (
-	"encoding/json"
+	"mime/multipart"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
@@ -33,19 +34,45 @@ func (h *MenuHandlerImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	utils.HttpResponse(w, http.StatusOK, menus, nil)
 }
-
 func (h *MenuHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
+
 	ctx := r.Context()
 
-	var req dto.CreateMenuRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		logger.Log.WithError(err).Error("Error invalid request body")
-		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
+	// Parse multipart form
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		logger.Log.WithError(err).Error("Error parsing multipart form")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid form data"))
 		return
 	}
 
-	createdMenu, err := h.menuUsecase.Create(ctx, req)
+	// Create request object
+	req := dto.CreateMenuRequest{
+		Name:        r.FormValue("name"),
+		Description: r.FormValue("description"),
+		Category:    r.FormValue("category"),
+		Restaurant:  r.FormValue("restaurant_id"),
+	}
+
+	price, err := strconv.Atoi(r.FormValue("price"))
+	if err != nil {
+		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid price format"))
+		return
+	}
+	req.Price = price
+
+	// Get file
+	file, handler, err := r.FormFile("image")
+	if err != nil {
+		logger.Log.WithError(err).Error("Error getting file")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Image is required"))
+		return
+	}
+	defer file.Close()
+
+	req.Image = handler
+
+	// Pass file to usecase
+	createdMenu, err := h.menuUsecase.Create(ctx, req, file)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to create menu")
 		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
@@ -73,15 +100,39 @@ func (h *MenuHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	id := mux.Vars(r)["id"]
-	var req dto.UpdateMenuRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		logger.Log.WithError(err).Error("Error invalid request body")
-		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
+	// Parse multipart form
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		logger.Log.WithError(err).Error("Error parsing multipart form")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid form data"))
 		return
 	}
 
-	updatedtedMenu, err := h.menuUsecase.Update(ctx, id, req)
+	req := dto.UpdateMenuRequest{
+		Name:        r.FormValue("name"),
+		Description: r.FormValue("description"),
+		Category:    r.FormValue("category"),
+		Restaurant:  r.FormValue("restaurant_id"),
+	}
+
+	// Parse price
+	price, err := strconv.Atoi(r.FormValue("price"))
+	if err != nil {
+		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid price format"))
+		return
+	}
+	req.Price = price
+
+	// Get file (optional)
+	file, handler, err := r.FormFile("image")
+	var multipartFile multipart.File
+	if err == nil {
+		multipartFile = file
+		req.Image = handler
+		defer file.Close()
+	}
+
+	updatedtedMenu, err := h.menuUsecase.Update(ctx, id, req, multipartFile)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to update menu")
 		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)

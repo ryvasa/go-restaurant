@@ -7,13 +7,13 @@ import (
 )
 
 type Menu struct {
-	ID          uuid.UUID `json:"id"`
-	Restaurant  uuid.UUID `json:"restaurant_id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Price       int       `json:"price"`
-	Category    string    `json:"category"`
-	ImageURL    string    `json:"image_url"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID          uuid.UUID `json:"id" validate:"required"`
+	Restaurant  uuid.UUID `json:"restaurant_id" validate:"required"`
+	Name        string    `json:"name" validate:"required"`
+	Description string    `json:"description" validate:"required"`
+	Price       int       `json:"price" validate:"required"`
+	Category    string    `json:"category" validate:"required"`
+	ImageURL    string    `json:"image_url" validate:"required"`
+	CreatedAt   time.Time `json:"created_at" validate:"required"`
+	UpdatedAt   time.Time `json:"updated_at" validate:"required"`
 }
