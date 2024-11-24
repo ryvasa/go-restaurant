@@ -96,7 +96,7 @@ func (r *UserRepositoryImpl) Update(ctx context.Context, user domain.User) (doma
 
 func (r *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (domain.User, error) {
 	user := domain.User{}
-	err := r.db.QueryRowContext(ctx, "SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE email = ?", email).Scan(&user.Id, &user.Name, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, "SELECT id,name,password,email,phone,role,created_at,updated_at FROM users WHERE email = ?", email).Scan(&user.Id, &user.Name, &user.Password, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		return user, err

@@ -13,6 +13,7 @@ import (
 	"github.com/ryvasa/go-restaurant/internal/usecase"
 	"github.com/ryvasa/go-restaurant/pkg/config"
 	"github.com/ryvasa/go-restaurant/pkg/database"
+	"github.com/ryvasa/go-restaurant/utils"
 )
 
 // Injectors from wire.go:
@@ -37,7 +38,11 @@ func InitializeHandlers() (*handler.Handlers, error) {
 	reviewRepository := repository.NewReviewRepository(db)
 	reviewUsecase := usecase.NewReviewUsecase(reviewRepository)
 	reviewHandlerImpl := handler.NewReviewHandler(reviewUsecase)
-	handlers := handler.NewHandlers(menuHandlerImpl, userHandlerImpl, reviewHandlerImpl)
+	authRepository := repository.NewAuthRepository(db)
+	tokenUtil := utils.NewTokenUtil(configConfig)
+	authUsecase := usecase.NewAuthUsecase(authRepository, userRepository, tokenUtil)
+	authHandlerImpl := handler.NewAuthHandler(authUsecase)
+	handlers := handler.NewHandlers(menuHandlerImpl, userHandlerImpl, reviewHandlerImpl, authHandlerImpl)
 	return handlers, nil
 }
 
@@ -47,4 +52,8 @@ var menuSet = wire.NewSet(repository.NewMenuRepository, usecase.NewMenuUsecase, 
 
 var reviewSet = wire.NewSet(repository.NewReviewRepository, usecase.NewReviewUsecase, handler.NewReviewHandler)
 
+var authSet = wire.NewSet(repository.NewAuthRepository, usecase.NewAuthUsecase, handler.NewAuthHandler)
+
 var userSet = wire.NewSet(repository.NewUserRepository, usecase.NewUserUsecase, handler.NewUserHandler)
+
+var utilSet = wire.NewSet(utils.NewTokenUtil)

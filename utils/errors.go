@@ -47,6 +47,14 @@ func NewInternalError(message string) error {
 	}
 }
 
+func NewUnauthorizedError(message string) error {
+	return AppError{
+		HttpStatus: http.StatusUnauthorized,
+		Code:       "UNAUTHORIZED",
+		Message:    message,
+	}
+}
+
 func GetErrorStatus(err error) int {
 	if appErr, ok := err.(AppError); ok {
 		return appErr.HttpStatus

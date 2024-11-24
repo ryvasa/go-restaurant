@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -51,8 +50,6 @@ func (h *ReviewHandlerImpl) GetAllByMenuId(w http.ResponseWriter, r *http.Reques
 		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
-
-	fmt.Println(reviews, "reviews")
 
 	utils.HttpResponse(w, http.StatusOK, reviews, nil)
 }

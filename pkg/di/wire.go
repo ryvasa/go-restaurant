@@ -10,6 +10,7 @@ import (
 	"github.com/ryvasa/go-restaurant/internal/usecase"
 	"github.com/ryvasa/go-restaurant/pkg/config"
 	"github.com/ryvasa/go-restaurant/pkg/database"
+	"github.com/ryvasa/go-restaurant/utils"
 )
 
 var menuSet = wire.NewSet(
@@ -24,10 +25,20 @@ var reviewSet = wire.NewSet(
 	handler.NewReviewHandler,
 )
 
+var authSet = wire.NewSet(
+	repository.NewAuthRepository,
+	usecase.NewAuthUsecase,
+	handler.NewAuthHandler,
+)
+
 var userSet = wire.NewSet(
 	repository.NewUserRepository,
 	usecase.NewUserUsecase,
 	handler.NewUserHandler,
+)
+
+var utilSet = wire.NewSet(
+	utils.NewTokenUtil,
 )
 
 // InitializeHandlers initializes Handlers with dependencies
@@ -36,9 +47,11 @@ func InitializeHandlers() (*handler.Handlers, error) {
 		config.LoadConfig,
 		database.ProvideDSN,
 		database.NewMySQLConnection,
+		utilSet,
 		menuSet,
 		userSet,
 		reviewSet,
+		authSet,
 		handler.NewHandlers,
 	)
 	return &handler.Handlers{}, nil

@@ -17,3 +17,8 @@ Run Application with nodemon
 ``` bash
 nodemon --exec go run cmd/main.go --signal SIGTERM
 ```
+
+Edit dependency injection
+``` bash
+wire ./pkg/di
+```
