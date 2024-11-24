@@ -7,6 +7,12 @@ import (
 )
 
 func NewRoutes(r *mux.Router, handlers *handler.Handlers) {
+	// config := &middleware.RecoveryConfig{
+	// 	EnableStackTrace: true,
+	// 	LogError:         true,
+	// }
+
+	// r.Use(middleware.RecoveryMiddleware(config))
 	r.Use(middleware.LoggingMiddleware)
 	MenuRoutes(r, handlers.MenuHandler)
 	UserRoutes(r, handlers.UserHandler)

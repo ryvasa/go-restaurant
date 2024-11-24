@@ -50,7 +50,6 @@ func (h *MenuHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 		Name:        r.FormValue("name"),
 		Description: r.FormValue("description"),
 		Category:    r.FormValue("category"),
-		Restaurant:  r.FormValue("restaurant_id"),
 	}
 
 	price, err := strconv.Atoi(r.FormValue("price"))
@@ -112,7 +111,6 @@ func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 		Name:        r.FormValue("name"),
 		Description: r.FormValue("description"),
 		Category:    r.FormValue("category"),
-		Restaurant:  r.FormValue("restaurant_id"),
 	}
 
 	// Parse price
