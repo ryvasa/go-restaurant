@@ -119,3 +119,35 @@ func (u *UserUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateU
 
 	return u.userRepo.Update(ctx, user)
 }
+
+func (u *UserUsecaseImpl) Delete(ctx context.Context, id string) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	if _, err := uuid.Parse(id); err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		return utils.NewValidationError("Invalid ID format")
+	}
+
+	if _, err := u.userRepo.Get(ctx, id); err != nil {
+		logger.Log.WithError(err).Error("Error user not found")
+		return utils.NewNotFoundError("User not found")
+	}
+	return u.userRepo.Delete(ctx, id)
+}
+
+func (u *UserUsecaseImpl) Restore(ctx context.Context, id string) (domain.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	if _, err := uuid.Parse(id); err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		return domain.User{}, utils.NewValidationError("Invalid ID format")
+	}
+
+	if _, err := u.userRepo.GetDeletedUserById(ctx, id); err != nil {
+		logger.Log.WithError(err).Error("Error user not found to restore")
+		return domain.User{}, utils.NewNotFoundError("User not found to restore")
+	}
+	return u.userRepo.Restore(ctx, id)
+}

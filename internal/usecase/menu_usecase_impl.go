@@ -146,3 +146,19 @@ func (u *MenuUsecaseImpl) Delete(ctx context.Context, id string) error {
 	}
 	return u.menuRepo.Delete(ctx, id)
 }
+
+func (u *MenuUsecaseImpl) Restore(ctx context.Context, id string) (domain.Menu, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	if _, err := uuid.Parse(id); err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		return domain.Menu{}, utils.NewValidationError("Invalid ID format")
+	}
+
+	if _, err := u.menuRepo.GetDeletedMenuById(ctx, id); err != nil {
+		logger.Log.WithError(err).Error("Error menu not found to restore")
+		return domain.Menu{}, utils.NewNotFoundError("Menu not found to restore")
+	}
+	return u.menuRepo.Restore(ctx, id)
+}

@@ -152,6 +152,21 @@ func (h *MenuHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
+	res := map[string]string{"message": "Menu deleted successfully"}
 
-	utils.HttpResponse(w, http.StatusNoContent, "Menu deleted", nil)
+	utils.HttpResponse(w, http.StatusOK, res, nil)
+}
+
+func (h *MenuHandlerImpl) Restore(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	id := mux.Vars(r)["id"]
+
+	menu, err := h.menuUsecase.Restore(ctx, id)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error failed to restore menu")
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
+		return
+	}
+
+	utils.HttpResponse(w, http.StatusOK, menu, nil)
 }

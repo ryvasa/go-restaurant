@@ -12,4 +12,6 @@ type MenuRepository interface {
 	Get(ctx context.Context, id string) (domain.Menu, error)
 	Update(ctx context.Context, menu domain.Menu) (domain.Menu, error)
 	Delete(ctx context.Context, id string) error
+	Restore(ctx context.Context, id string) (domain.Menu, error)
+	GetDeletedMenuById(ctx context.Context, id string) ([]domain.Menu, error)
 }
