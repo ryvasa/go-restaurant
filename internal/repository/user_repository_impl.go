@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
 )
@@ -17,7 +18,7 @@ func NewUserRepository(db *sql.DB) UserRepository {
 
 func (r *UserRepositoryImpl) GetAll(ctx context.Context) ([]domain.User, error) {
 	users := []domain.User{}
-	rows, err := r.db.QueryContext(ctx, "SELECT id,name,email,phone,role,created_at,updated_at FROM users")
+	rows, err := r.db.QueryContext(ctx, "SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE deleted = false AND deleted_at IS NULL")
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +52,7 @@ func (r *UserRepositoryImpl) Create(ctx context.Context, user domain.User) (doma
 
 func (r *UserRepositoryImpl) Get(ctx context.Context, id string) (domain.User, error) {
 	user := domain.User{}
-	err := r.db.QueryRowContext(ctx, "SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE id = ?", id).Scan(&user.ID, &user.Name, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, "SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE id = ? AND deleted = false AND deleted_at IS NULL", id).Scan(&user.ID, &user.Name, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		return user, err
@@ -101,4 +102,41 @@ func (r *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (doma
 		return user, err
 	}
 	return user, nil
+}
+
+func (r *UserRepositoryImpl) Delete(ctx context.Context, id string) error {
+	_, err := r.db.ExecContext(ctx, "UPDATE users SET deleted = ?, deleted_at = ? WHERE id = ?", true, time.Now(), id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *UserRepositoryImpl) Restore(ctx context.Context, id string) (domain.User, error) {
+	_, err := r.db.ExecContext(ctx, "UPDATE users SET deleted = ?, deleted_at = ? WHERE id = ?", false, nil, id)
+	if err != nil {
+		return domain.User{}, err
+	}
+	user, _ := r.Get(ctx, id)
+	return user, nil
+}
+
+func (r *UserRepositoryImpl) GetDeletedUserById(ctx context.Context, id string) ([]domain.User, error) {
+	users := []domain.User{}
+	rows, err := r.db.QueryContext(ctx, "SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE deleted = true AND deleted_at IS NOT NULL AND id = ?", id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var user domain.User
+		err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return users, nil
 }

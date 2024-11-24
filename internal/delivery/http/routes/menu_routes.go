@@ -12,4 +12,5 @@ func MenuRoutes(r *mux.Router, menuHandler handler.MenuHandler) {
 	r.HandleFunc("/menu/{id}", menuHandler.Get).Methods("GET")
 	r.HandleFunc("/menu/{id}", menuHandler.Update).Methods("PATCH")
 	r.HandleFunc("/menu/{id}", menuHandler.Delete).Methods("DELETE")
+	r.HandleFunc("/menu/{id}/restore", menuHandler.Restore).Methods("PATCH")
 }

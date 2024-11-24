@@ -88,3 +88,32 @@ func (h *UserHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 
 	utils.HttpResponse(w, http.StatusOK, updatedUser, nil)
 }
+
+func (h *UserHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	id := mux.Vars(r)["id"]
+
+	err := h.userUsecase.Delete(ctx, id)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error failed to delete user")
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
+		return
+	}
+	res := map[string]string{"message": "User deleted successfully"}
+
+	utils.HttpResponse(w, http.StatusOK, res, nil)
+}
+
+func (h *UserHandlerImpl) Restore(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	id := mux.Vars(r)["id"]
+
+	user, err := h.userUsecase.Restore(ctx, id)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error failed to restore user")
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
+		return
+	}
+
+	utils.HttpResponse(w, http.StatusOK, user, nil)
+}
