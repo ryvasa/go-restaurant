@@ -53,7 +53,7 @@ func (u *UserUsecaseImpl) Create(ctx context.Context, req dto.CreateUserRequest)
 	}
 
 	user = domain.User{
-		ID:       uuid.New(),
+		Id:       uuid.New(),
 		Name:     req.Name,
 		Password: hashedPassword,
 		Email:    req.Email,
@@ -101,7 +101,7 @@ func (u *UserUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateU
 	}
 
 	user = domain.User{
-		ID:    userID,
+		Id:    userID,
 		Name:  req.Name,
 		Email: req.Email,
 		Role:  req.Role,

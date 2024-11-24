@@ -26,7 +26,7 @@ func (r *UserRepositoryImpl) GetAll(ctx context.Context) ([]domain.User, error) 
 
 	for rows.Next() {
 		var user domain.User
-		err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+		err := rows.Scan(&user.Id, &user.Name, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -37,12 +37,12 @@ func (r *UserRepositoryImpl) GetAll(ctx context.Context) ([]domain.User, error) 
 
 func (r *UserRepositoryImpl) Create(ctx context.Context, user domain.User) (domain.User, error) {
 	_, err := r.db.ExecContext(ctx, "INSERT INTO users (id,name,email,password,phone,role) VALUES (?, ?, ?, ?, ?, ?)",
-		user.ID, user.Name, user.Email, user.Password, user.Phone, user.Role)
+		user.Id, user.Name, user.Email, user.Password, user.Phone, user.Role)
 	if err != nil {
 		return domain.User{}, err
 	}
 
-	createdUser, err := r.Get(ctx, user.ID.String())
+	createdUser, err := r.Get(ctx, user.Id.String())
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -52,7 +52,7 @@ func (r *UserRepositoryImpl) Create(ctx context.Context, user domain.User) (doma
 
 func (r *UserRepositoryImpl) Get(ctx context.Context, id string) (domain.User, error) {
 	user := domain.User{}
-	err := r.db.QueryRowContext(ctx, "SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE id = ? AND deleted = false AND deleted_at IS NULL", id).Scan(&user.ID, &user.Name, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, "SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE id = ? AND deleted = false AND deleted_at IS NULL", id).Scan(&user.Id, &user.Name, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		return user, err
@@ -62,7 +62,7 @@ func (r *UserRepositoryImpl) Get(ctx context.Context, id string) (domain.User, e
 
 func (r *UserRepositoryImpl) Update(ctx context.Context, user domain.User) (domain.User, error) {
 	// Ambil data user yang ada
-	existingUser, err := r.Get(ctx, user.ID.String())
+	existingUser, err := r.Get(ctx, user.Id.String())
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -86,17 +86,17 @@ func (r *UserRepositoryImpl) Update(ctx context.Context, user domain.User) (doma
 
 	// Eksekusi query update
 	_, err = r.db.ExecContext(ctx, "UPDATE users SET name = ?, email = ?, password = ?, phone = ?, role = ? WHERE id = ?",
-		existingUser.Name, existingUser.Email, existingUser.Password, existingUser.Phone, existingUser.Role, existingUser.ID)
+		existingUser.Name, existingUser.Email, existingUser.Password, existingUser.Phone, existingUser.Role, existingUser.Id)
 	if err != nil {
 		return domain.User{}, err
 	}
 
-	return r.Get(ctx, user.ID.String())
+	return r.Get(ctx, user.Id.String())
 }
 
 func (r *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (domain.User, error) {
 	user := domain.User{}
-	err := r.db.QueryRowContext(ctx, "SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE email = ?", email).Scan(&user.ID, &user.Name, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, "SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE email = ?", email).Scan(&user.Id, &user.Name, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		return user, err
@@ -132,7 +132,7 @@ func (r *UserRepositoryImpl) GetDeletedUserById(ctx context.Context, id string) 
 
 	for rows.Next() {
 		var user domain.User
-		err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+		err := rows.Scan(&user.Id, &user.Name, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}

@@ -40,13 +40,6 @@ func (u *MenuUsecaseImpl) Create(ctx context.Context, req dto.CreateMenuRequest,
 		return domain.Menu{}, utils.NewValidationError(err)
 	}
 
-	// Parse restaurant ID
-	restaurantID, err := uuid.Parse(req.Restaurant)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error invalid restaurant id format")
-		return domain.Menu{}, utils.NewValidationError("Invalid restaurant id format")
-	}
-
 	// Upload file after validation
 	imagePath, err := utils.UploadFile(file, req.Image, "menu")
 	if err != nil {
@@ -55,10 +48,9 @@ func (u *MenuUsecaseImpl) Create(ctx context.Context, req dto.CreateMenuRequest,
 	}
 
 	menu := domain.Menu{
-		ID:          uuid.New(),
+		Id:          uuid.New(),
 		Name:        req.Name,
 		Price:       req.Price,
-		Restaurant:  restaurantID,
 		Description: req.Description,
 		Category:    req.Category,
 		ImageURL:    imagePath,
@@ -100,7 +92,7 @@ func (u *MenuUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateM
 	}
 
 	menu := domain.Menu{
-		ID:          menuId,
+		Id:          menuId,
 		Name:        req.Name,
 		Price:       req.Price,
 		Description: req.Description,
@@ -116,16 +108,6 @@ func (u *MenuUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateM
 			return domain.Menu{}, utils.NewInternalError("Failed to upload image")
 		}
 		menu.ImageURL = imagePath
-	}
-
-	if req.Restaurant != "" {
-		restaurantID, err := uuid.Parse(req.Restaurant)
-		if err != nil {
-			logger.Log.WithError(err).Error("Error invalid restaurant id format")
-			return domain.Menu{}, utils.NewValidationError("Invalid id format")
-
-		}
-		menu.Restaurant = restaurantID
 	}
 
 	return u.menuRepo.Update(ctx, menu)
