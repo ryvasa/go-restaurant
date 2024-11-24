@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -31,7 +32,7 @@ func (h *MenuHandlerImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
-
+	fmt.Println(menus, "menus")
 	utils.HttpResponse(w, http.StatusOK, menus, nil)
 }
 func (h *MenuHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {

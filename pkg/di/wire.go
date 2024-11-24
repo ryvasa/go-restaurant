@@ -18,6 +18,12 @@ var menuSet = wire.NewSet(
 	handler.NewMenuHandler,
 )
 
+var reviewSet = wire.NewSet(
+	repository.NewReviewRepository,
+	usecase.NewReviewUsecase,
+	handler.NewReviewHandler,
+)
+
 var userSet = wire.NewSet(
 	repository.NewUserRepository,
 	usecase.NewUserUsecase,
@@ -32,6 +38,7 @@ func InitializeHandlers() (*handler.Handlers, error) {
 		database.NewMySQLConnection,
 		menuSet,
 		userSet,
+		reviewSet,
 		handler.NewHandlers,
 	)
 	return &handler.Handlers{}, nil

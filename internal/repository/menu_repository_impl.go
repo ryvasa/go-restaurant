@@ -26,7 +26,7 @@ func (r *MenuRepositoryImpl) GetAll(ctx context.Context) ([]domain.Menu, error) 
 
 	for rows.Next() {
 		var menu domain.Menu
-		err := rows.Scan(&menu.ID, &menu.Name, &menu.Description, &menu.Price, &menu.Category, &menu.ImageURL, &menu.Rating, &menu.CreatedAt, &menu.UpdatedAt)
+		err := rows.Scan(&menu.Id, &menu.Name, &menu.Description, &menu.Price, &menu.Category, &menu.ImageURL, &menu.Rating, &menu.CreatedAt, &menu.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -37,13 +37,13 @@ func (r *MenuRepositoryImpl) GetAll(ctx context.Context) ([]domain.Menu, error) 
 
 func (r *MenuRepositoryImpl) Create(ctx context.Context, menu domain.Menu) (domain.Menu, error) {
 	_, err := r.db.ExecContext(ctx, "INSERT INTO menu (id,name,description,price,category,image_url) VALUES (?,  ?, ?, ?, ?, ?)",
-		menu.ID, menu.Name, menu.Description, menu.Price, menu.Category, menu.ImageURL)
+		menu.Id, menu.Name, menu.Description, menu.Price, menu.Category, menu.ImageURL)
 
 	if err != nil {
 		return domain.Menu{}, err
 	}
 
-	createdMenu, err := r.Get(ctx, menu.ID.String())
+	createdMenu, err := r.Get(ctx, menu.Id.String())
 	if err != nil {
 		return domain.Menu{}, err
 	}
@@ -53,7 +53,7 @@ func (r *MenuRepositoryImpl) Create(ctx context.Context, menu domain.Menu) (doma
 
 func (r *MenuRepositoryImpl) Get(ctx context.Context, id string) (domain.Menu, error) {
 	menu := domain.Menu{}
-	err := r.db.QueryRowContext(ctx, "SELECT id,name,description,price,category,image_url,rating,created_at,updated_at FROM menu WHERE id = ? AND deleted = false AND deleted_at IS NULL", id).Scan(&menu.ID, &menu.Name, &menu.Description, &menu.Price, &menu.Category, &menu.ImageURL, &menu.Rating, &menu.CreatedAt, &menu.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, "SELECT id,name,description,price,category,image_url,rating,created_at,updated_at FROM menu WHERE id = ? AND deleted = false AND deleted_at IS NULL", id).Scan(&menu.Id, &menu.Name, &menu.Description, &menu.Price, &menu.Category, &menu.ImageURL, &menu.Rating, &menu.CreatedAt, &menu.UpdatedAt)
 	if err != nil {
 		return menu, err
 	}
@@ -62,7 +62,7 @@ func (r *MenuRepositoryImpl) Get(ctx context.Context, id string) (domain.Menu, e
 
 func (r *MenuRepositoryImpl) Update(ctx context.Context, menu domain.Menu) (domain.Menu, error) {
 	// Ambil data menu yang ada
-	existingMenu, err := r.Get(ctx, menu.ID.String())
+	existingMenu, err := r.Get(ctx, menu.Id.String())
 	if err != nil {
 		return domain.Menu{}, err
 	}
@@ -95,13 +95,13 @@ func (r *MenuRepositoryImpl) Update(ctx context.Context, menu domain.Menu) (doma
 		existingMenu.Description,
 		existingMenu.Category,
 		existingMenu.ImageURL,
-		existingMenu.ID,
+		existingMenu.Id,
 	)
 	if err != nil {
 		return domain.Menu{}, err
 	}
 
-	return r.Get(ctx, existingMenu.ID.String())
+	return r.Get(ctx, existingMenu.Id.String())
 }
 
 func (r *MenuRepositoryImpl) Delete(ctx context.Context, id string) error {
@@ -132,7 +132,7 @@ func (r *MenuRepositoryImpl) GetDeletedMenuById(ctx context.Context, id string) 
 
 	for rows.Next() {
 		var menu domain.Menu
-		err := rows.Scan(&menu.ID, &menu.Name, &menu.Description, &menu.Price, &menu.Category, &menu.ImageURL, &menu.Rating, &menu.CreatedAt, &menu.UpdatedAt)
+		err := rows.Scan(&menu.Id, &menu.Name, &menu.Description, &menu.Price, &menu.Category, &menu.ImageURL, &menu.Rating, &menu.CreatedAt, &menu.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}

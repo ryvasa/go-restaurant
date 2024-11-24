@@ -16,4 +16,5 @@ func NewRoutes(r *mux.Router, handlers *handler.Handlers) {
 	r.Use(middleware.LoggingMiddleware)
 	MenuRoutes(r, handlers.MenuHandler)
 	UserRoutes(r, handlers.UserHandler)
+	ReviewRoutes(r, handlers.ReviewHandler)
 }

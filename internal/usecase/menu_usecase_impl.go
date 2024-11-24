@@ -48,7 +48,7 @@ func (u *MenuUsecaseImpl) Create(ctx context.Context, req dto.CreateMenuRequest,
 	}
 
 	menu := domain.Menu{
-		ID:          uuid.New(),
+		Id:          uuid.New(),
 		Name:        req.Name,
 		Price:       req.Price,
 		Description: req.Description,
@@ -92,7 +92,7 @@ func (u *MenuUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateM
 	}
 
 	menu := domain.Menu{
-		ID:          menuId,
+		Id:          menuId,
 		Name:        req.Name,
 		Price:       req.Price,
 		Description: req.Description,

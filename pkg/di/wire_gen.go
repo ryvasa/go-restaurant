@@ -34,12 +34,17 @@ func InitializeHandlers() (*handler.Handlers, error) {
 	userRepository := repository.NewUserRepository(db)
 	userUsecase := usecase.NewUserUsecase(userRepository)
 	userHandlerImpl := handler.NewUserHandler(userUsecase)
-	handlers := handler.NewHandlers(menuHandlerImpl, userHandlerImpl)
+	reviewRepository := repository.NewReviewRepository(db)
+	reviewUsecase := usecase.NewReviewUsecase(reviewRepository)
+	reviewHandlerImpl := handler.NewReviewHandler(reviewUsecase)
+	handlers := handler.NewHandlers(menuHandlerImpl, userHandlerImpl, reviewHandlerImpl)
 	return handlers, nil
 }
 
 // wire.go:
 
 var menuSet = wire.NewSet(repository.NewMenuRepository, usecase.NewMenuUsecase, handler.NewMenuHandler)
+
+var reviewSet = wire.NewSet(repository.NewReviewRepository, usecase.NewReviewUsecase, handler.NewReviewHandler)
 
 var userSet = wire.NewSet(repository.NewUserRepository, usecase.NewUserUsecase, handler.NewUserHandler)
