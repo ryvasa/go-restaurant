@@ -52,15 +52,14 @@ func (r *UserRepositoryImpl) Create(ctx context.Context, user domain.User) (doma
 
 func (r *UserRepositoryImpl) Get(ctx context.Context, id string) (domain.User, error) {
 	user := domain.User{}
-	var phone sql.NullString // Gunakan sql.NullString untuk handle NULL
-
+	var phone sql.NullString
 	err := r.db.QueryRowContext(ctx,
 		"SELECT id, name, email, phone, role, created_at, updated_at FROM users WHERE id = ? AND deleted = false AND deleted_at IS NULL",
 		id).Scan(
 		&user.Id,
 		&user.Name,
 		&user.Email,
-		&phone, // Scan ke NullString
+		&phone,
 		&user.Role,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -70,7 +69,6 @@ func (r *UserRepositoryImpl) Get(ctx context.Context, id string) (domain.User, e
 		return user, err
 	}
 
-	// Convert NullString ke *string
 	if phone.Valid {
 		user.Phone = &phone.String
 	} else {

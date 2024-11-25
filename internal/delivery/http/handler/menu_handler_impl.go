@@ -33,8 +33,8 @@ func (h *MenuHandlerImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 	utils.HttpResponse(w, http.StatusOK, menus, nil)
 }
-func (h *MenuHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 
+func (h *MenuHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// Parse multipart form

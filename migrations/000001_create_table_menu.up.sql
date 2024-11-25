@@ -4,22 +4,22 @@ CREATE TABLE IF NOT EXISTS menu (
     description TEXT NOT NULL,
     price INT NOT NULL,
     category ENUM(
-            'main',          -- Makanan Utama
-            'appetizer',     -- Pembuka
-            'dessert',       -- Penutup
-            'drink',         -- Minuman
-            'snack',         -- Camilan
-            'vegetarian',    -- Vegetarian/Vegan
-            'kids',          -- Hidangan Anak
-            'local',         -- Hidangan Lokal
-            'special',       -- Spesial Chef
-            'combo',         -- Paket
-            'breakfast',     -- Sarapan
-            'healthy',       -- Makanan Sehat
-            'international', -- Hidangan Internasional
-            'seafood',       -- Hidangan Laut
-            'spicy'          -- Hidangan Pedas
-        ) NOT NULL,
+            'main',
+            'appetizer',
+            'dessert',
+            'drink',
+            'snack',
+            'vegetarian',
+            'kids',
+            'local',
+            'special',
+            'combo',
+            'breakfast',
+            'healthy',
+            'international',
+            'seafood',
+            'spicy'
+            ) NOT NULL,
     image_url VARCHAR(255) NOT NULL,
     rating INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

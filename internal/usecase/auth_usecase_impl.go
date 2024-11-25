@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
@@ -49,7 +48,6 @@ func (u *AuthUsecaseImpl) Login(ctx context.Context, req dto.LoginDto) (domain.A
 		return domain.Auth{}, utils.NewUnauthorizedError("Invalid email or password")
 	}
 
-	fmt.Println(user)
 	// Generate JWT token
 	token, err := u.tokenUtil.GenerateToken(user.Id.String(), user.Role)
 	if err != nil {

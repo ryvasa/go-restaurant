@@ -34,7 +34,7 @@ func (r *ReviewRepositoryImpl) GetAllByMenuId(ctx context.Context, id string) ([
 }
 
 func (r *ReviewRepositoryImpl) Create(ctx context.Context, review domain.Review) error {
-	_, err := r.db.ExecContext(ctx, "INSERT INTO review (rating, comment, user_id, menu_id) VALUES ($1, $2, $3, $4)", review.Rating, review.Comment, review.UserId, review.MenuId)
+	_, err := r.db.ExecContext(ctx, "INSERT INTO review (rating, comment, user_id, menu_id) VALUES (?, ?, ?, ?)", review.Rating, review.Comment, review.UserId, review.MenuId)
 	if err != nil {
 		return err
 	}

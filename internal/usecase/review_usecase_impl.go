@@ -14,10 +14,12 @@ import (
 
 type ReviewUsecaseImpl struct {
 	reviewRepo repository.ReviewRepository
+	userRepo   repository.UserRepository
+	menuRepo   repository.MenuRepository
 }
 
-func NewReviewUsecase(reviewRepository repository.ReviewRepository) ReviewUsecase {
-	return &ReviewUsecaseImpl{reviewRepository}
+func NewReviewUsecase(reviewRepo repository.ReviewRepository, userRepo repository.UserRepository, menuRepo repository.MenuRepository) ReviewUsecase {
+	return &ReviewUsecaseImpl{reviewRepo, userRepo, menuRepo}
 }
 
 func (u *ReviewUsecaseImpl) GetAllByMenuId(ctx context.Context, id string) ([]domain.Review, error) {
@@ -31,17 +33,35 @@ func (u *ReviewUsecaseImpl) GetAllByMenuId(ctx context.Context, id string) ([]do
 	return reviews, nil
 }
 
-func (u *ReviewUsecaseImpl) Create(ctx context.Context, req dto.CreateReviewRequest) (domain.Review, error) {
+func (u *ReviewUsecaseImpl) Create(ctx context.Context, req dto.CreateReviewRequest, userId string) (domain.Review, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
+
+	if err := utils.ValidateStruct(req); len(err) > 0 {
+		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
+		return domain.Review{}, utils.NewValidationError(err)
+	}
+	user, err := u.userRepo.Get(ctx, userId)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error user not found")
+		return domain.Review{}, utils.NewNotFoundError("User not found")
+	}
+
+	menuId := req.MenuId
+	menu, err := u.menuRepo.Get(ctx, menuId)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error user not found")
+		return domain.Review{}, utils.NewNotFoundError("Menu not found")
+	}
+
 	review := domain.Review{
 		Id:      uuid.New(),
 		Rating:  req.Rating,
 		Comment: req.Comment,
-		UserId:  uuid.New(),
-		MenuId:  uuid.New(),
+		UserId:  user.Id,
+		MenuId:  menu.Id,
 	}
-	err := u.reviewRepo.Create(ctx, review)
+	err = u.reviewRepo.Create(ctx, review)
 	if err != nil {
 		return domain.Review{}, err
 	}
