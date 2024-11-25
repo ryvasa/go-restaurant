@@ -13,6 +13,16 @@ import (
 	"github.com/ryvasa/go-restaurant/utils"
 )
 
+var orderMenuSet = wire.NewSet(
+	repository.NewOrderMenuRepository,
+)
+
+var orderSet = wire.NewSet(
+	repository.NewOrderRepository,
+	usecase.NewOrderUsecase,
+	handler.NewOrderHandler,
+)
+
 var menuSet = wire.NewSet(
 	repository.NewMenuRepository,
 	usecase.NewMenuUsecase,
@@ -51,6 +61,8 @@ func InitializeHandlers() (*handler.Handlers, error) {
 		userSet,
 		reviewSet,
 		authSet,
+		orderSet,
+		orderMenuSet,
 		handler.NewHandlers,
 	)
 	return &handler.Handlers{}, nil

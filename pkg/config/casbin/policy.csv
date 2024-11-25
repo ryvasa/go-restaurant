@@ -1,14 +1,18 @@
 p, admin, /api/menu*, *
 p, admin, /api/users*, *
 p, admin, /api/review*, *
+p, admin, /api/order*, *
 
 p, staff, /api/menu*, POST
 p, staff, /api/menu*, GET
 p, staff, /api/menu/*/restore, PATCH
 p, staff, /api/users, GET
 p, staff, /api/review*, GET
+p, staff, /api/order*, *
 
 p, customer, /api/menu*, GET
 p, customer, /api/review*, GET
 p, customer, /api/review, POST
+p, customer, /api/order*, GET
+p, customer, /api/order, POST
 p, customer, /api/review/*, PATCH

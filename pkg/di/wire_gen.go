@@ -36,16 +36,24 @@ func InitializeHandlers() (*handler.Handlers, error) {
 	userUsecase := usecase.NewUserUsecase(userRepository)
 	userHandlerImpl := handler.NewUserHandler(userUsecase)
 	reviewRepository := repository.NewReviewRepository(db)
-	reviewUsecase := usecase.NewReviewUsecase(reviewRepository)
+	reviewUsecase := usecase.NewReviewUsecase(reviewRepository, userRepository, menuRepository)
 	reviewHandlerImpl := handler.NewReviewHandler(reviewUsecase)
 	tokenUtil := utils.NewTokenUtil(configConfig)
 	authUsecase := usecase.NewAuthUsecase(userRepository, tokenUtil)
 	authHandlerImpl := handler.NewAuthHandler(authUsecase)
-	handlers := handler.NewHandlers(menuHandlerImpl, userHandlerImpl, reviewHandlerImpl, authHandlerImpl)
+	orderRepository := repository.NewOrderRepository(db)
+	orderMenuRepository := repository.NewOrderMenuRepository(db)
+	orderUsecase := usecase.NewOrderUsecase(orderRepository, menuRepository, userRepository, orderMenuRepository)
+	orderHandlerImpl := handler.NewOrderHandler(orderUsecase)
+	handlers := handler.NewHandlers(menuHandlerImpl, userHandlerImpl, reviewHandlerImpl, authHandlerImpl, orderHandlerImpl)
 	return handlers, nil
 }
 
 // wire.go:
+
+var orderMenuSet = wire.NewSet(repository.NewOrderMenuRepository)
+
+var orderSet = wire.NewSet(repository.NewOrderRepository, usecase.NewOrderUsecase, handler.NewOrderHandler)
 
 var menuSet = wire.NewSet(repository.NewMenuRepository, usecase.NewMenuUsecase, handler.NewMenuHandler)
 

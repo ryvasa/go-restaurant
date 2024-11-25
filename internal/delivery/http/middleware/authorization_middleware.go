@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/casbin/casbin/v2"
@@ -42,7 +41,7 @@ func (m *AuthorizationMiddleware) Handle(next http.Handler) http.Handler {
 				utils.NewInternalError("Authorization check failed"))
 			return
 		}
-		fmt.Println(role, path, method)
+
 		if !allowed {
 			logger.Log.WithError(err).Error("Error not allowed")
 			utils.HttpResponse(w, http.StatusForbidden, nil,
