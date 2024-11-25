@@ -105,7 +105,7 @@ func (u *UserUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateU
 		Name:  req.Name,
 		Email: req.Email,
 		Role:  req.Role,
-		Phone: req.Phone,
+		Phone: &req.Phone,
 	}
 
 	if req.Password != "" {

@@ -3,19 +3,12 @@ package routes
 import (
 	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/delivery/http/handler"
-	"github.com/ryvasa/go-restaurant/internal/delivery/http/middleware"
 )
 
-func NewRoutes(r *mux.Router, handlers *handler.Handlers) {
-	// config := &middleware.RecoveryConfig{
-	// 	EnableStackTrace: true,
-	// 	LogError:         true,
-	// }
+func NewRoutes(public, protected *mux.Router, handlers *handler.Handlers) {
 
-	// r.Use(middleware.RecoveryMiddleware(config))
-	r.Use(middleware.LoggingMiddleware)
-	MenuRoutes(r, handlers.MenuHandler)
-	UserRoutes(r, handlers.UserHandler)
-	ReviewRoutes(r, handlers.ReviewHandler)
-	AuthRoutes(r, handlers.AuthHandler)
+	MenuRoutes(public, protected, handlers.MenuHandler)
+	UserRoutes(public, protected, handlers.UserHandler)
+	ReviewRoutes(public, protected, handlers.ReviewHandler)
+	AuthRoutes(public, handlers.AuthHandler)
 }

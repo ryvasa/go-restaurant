@@ -38,9 +38,8 @@ func InitializeHandlers() (*handler.Handlers, error) {
 	reviewRepository := repository.NewReviewRepository(db)
 	reviewUsecase := usecase.NewReviewUsecase(reviewRepository)
 	reviewHandlerImpl := handler.NewReviewHandler(reviewUsecase)
-	authRepository := repository.NewAuthRepository(db)
 	tokenUtil := utils.NewTokenUtil(configConfig)
-	authUsecase := usecase.NewAuthUsecase(authRepository, userRepository, tokenUtil)
+	authUsecase := usecase.NewAuthUsecase(userRepository, tokenUtil)
 	authHandlerImpl := handler.NewAuthHandler(authUsecase)
 	handlers := handler.NewHandlers(menuHandlerImpl, userHandlerImpl, reviewHandlerImpl, authHandlerImpl)
 	return handlers, nil
@@ -52,7 +51,7 @@ var menuSet = wire.NewSet(repository.NewMenuRepository, usecase.NewMenuUsecase, 
 
 var reviewSet = wire.NewSet(repository.NewReviewRepository, usecase.NewReviewUsecase, handler.NewReviewHandler)
 
-var authSet = wire.NewSet(repository.NewAuthRepository, usecase.NewAuthUsecase, handler.NewAuthHandler)
+var authSet = wire.NewSet(usecase.NewAuthUsecase, handler.NewAuthHandler)
 
 var userSet = wire.NewSet(repository.NewUserRepository, usecase.NewUserUsecase, handler.NewUserHandler)
 

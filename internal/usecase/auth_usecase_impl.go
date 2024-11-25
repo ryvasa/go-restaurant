@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
@@ -12,18 +13,15 @@ import (
 )
 
 type AuthUsecaseImpl struct {
-	authRepo  repository.AuthRepository
 	userRepo  repository.UserRepository
 	tokenUtil *utils.TokenUtil
 }
 
 func NewAuthUsecase(
-	authRepo repository.AuthRepository,
 	userRepo repository.UserRepository,
 	tokenUtil *utils.TokenUtil,
 ) AuthUsecase {
 	return &AuthUsecaseImpl{
-		authRepo:  authRepo,
 		userRepo:  userRepo,
 		tokenUtil: tokenUtil,
 	}
@@ -51,6 +49,7 @@ func (u *AuthUsecaseImpl) Login(ctx context.Context, req dto.LoginDto) (domain.A
 		return domain.Auth{}, utils.NewUnauthorizedError("Invalid email or password")
 	}
 
+	fmt.Println(user)
 	// Generate JWT token
 	token, err := u.tokenUtil.GenerateToken(user.Id.String(), user.Role)
 	if err != nil {

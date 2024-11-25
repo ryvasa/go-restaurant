@@ -36,8 +36,8 @@ func (r *UserRepositoryImpl) GetAll(ctx context.Context) ([]domain.User, error) 
 }
 
 func (r *UserRepositoryImpl) Create(ctx context.Context, user domain.User) (domain.User, error) {
-	_, err := r.db.ExecContext(ctx, "INSERT INTO users (id,name,email,password,phone,role) VALUES (?, ?, ?, ?, ?, ?)",
-		user.Id, user.Name, user.Email, user.Password, user.Phone, user.Role)
+	_, err := r.db.ExecContext(ctx, "INSERT INTO users (id,name,email,password,role) VALUES (?, ?,  ?, ?, ?)",
+		user.Id, user.Name, user.Email, user.Password, user.Role)
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -52,11 +52,31 @@ func (r *UserRepositoryImpl) Create(ctx context.Context, user domain.User) (doma
 
 func (r *UserRepositoryImpl) Get(ctx context.Context, id string) (domain.User, error) {
 	user := domain.User{}
-	err := r.db.QueryRowContext(ctx, "SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE id = ? AND deleted = false AND deleted_at IS NULL", id).Scan(&user.Id, &user.Name, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+	var phone sql.NullString // Gunakan sql.NullString untuk handle NULL
+
+	err := r.db.QueryRowContext(ctx,
+		"SELECT id, name, email, phone, role, created_at, updated_at FROM users WHERE id = ? AND deleted = false AND deleted_at IS NULL",
+		id).Scan(
+		&user.Id,
+		&user.Name,
+		&user.Email,
+		&phone, // Scan ke NullString
+		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
 
 	if err != nil {
 		return user, err
 	}
+
+	// Convert NullString ke *string
+	if phone.Valid {
+		user.Phone = &phone.String
+	} else {
+		user.Phone = nil
+	}
+
 	return user, nil
 }
 
@@ -77,7 +97,7 @@ func (r *UserRepositoryImpl) Update(ctx context.Context, user domain.User) (doma
 	if user.Password != "" {
 		existingUser.Password = user.Password
 	}
-	if user.Phone != "" {
+	if user.Phone != nil {
 		existingUser.Phone = user.Phone
 	}
 	if user.Role != "" {

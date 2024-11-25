@@ -26,7 +26,6 @@ var reviewSet = wire.NewSet(
 )
 
 var authSet = wire.NewSet(
-	repository.NewAuthRepository,
 	usecase.NewAuthUsecase,
 	handler.NewAuthHandler,
 )

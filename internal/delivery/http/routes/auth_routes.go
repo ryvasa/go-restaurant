@@ -5,6 +5,6 @@ import (
 	"github.com/ryvasa/go-restaurant/internal/delivery/http/handler"
 )
 
-func AuthRoutes(r *mux.Router, authHandler handler.AuthHandler) {
-	r.HandleFunc("/auth/login", authHandler.Login).Methods("POST")
+func AuthRoutes(public *mux.Router, authHandler handler.AuthHandler) {
+	public.HandleFunc("/auth/login", authHandler.Login).Methods("POST")
 }
