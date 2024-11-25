@@ -5,11 +5,16 @@ import (
 	"github.com/ryvasa/go-restaurant/internal/delivery/http/handler"
 )
 
-func UserRoutes(r *mux.Router, userHandler handler.UserHandler) {
-	r.HandleFunc("/users", userHandler.GetAll).Methods("GET")
-	r.HandleFunc("/users", userHandler.Create).Methods("POST")
-	r.HandleFunc("/users/{id}", userHandler.Get).Methods("GET")
-	r.HandleFunc("/users/{id}", userHandler.Update).Methods("PATCH")
-	r.HandleFunc("/users/{id}", userHandler.Delete).Methods("DELETE")
-	r.HandleFunc("/users/{id}/restore", userHandler.Restore).Methods("PATCH")
+func UserRoutes(public, protected *mux.Router, handler handler.UserHandler) {
+	// no auth
+	public.HandleFunc("/users", handler.Create).Methods("POST")
+
+	//all role
+	protected.HandleFunc("/users/{id}", handler.Get).Methods("GET")
+	protected.HandleFunc("/users/{id}", handler.Update).Methods("PATCH")
+
+	//protected admin and staff
+	protected.HandleFunc("/users", handler.GetAll).Methods("GET")
+	protected.HandleFunc("/users/{id}", handler.Delete).Methods("DELETE")
+	protected.HandleFunc("/users/{id}/restore", handler.Restore).Methods("PATCH")
 }

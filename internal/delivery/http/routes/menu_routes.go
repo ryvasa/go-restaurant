@@ -5,12 +5,14 @@ import (
 	"github.com/ryvasa/go-restaurant/internal/delivery/http/handler"
 )
 
-func MenuRoutes(r *mux.Router, menuHandler handler.MenuHandler) {
+func MenuRoutes(public, protected *mux.Router, handler handler.MenuHandler) {
+	// all role tanpa auth
+	public.HandleFunc("/menu", handler.GetAll).Methods("GET")
+	public.HandleFunc("/menu/{id}", handler.Get).Methods("GET")
 
-	r.HandleFunc("/menu", menuHandler.GetAll).Methods("GET")
-	r.HandleFunc("/menu", menuHandler.Create).Methods("POST")
-	r.HandleFunc("/menu/{id}", menuHandler.Get).Methods("GET")
-	r.HandleFunc("/menu/{id}", menuHandler.Update).Methods("PATCH")
-	r.HandleFunc("/menu/{id}", menuHandler.Delete).Methods("DELETE")
-	r.HandleFunc("/menu/{id}/restore", menuHandler.Restore).Methods("PATCH")
+	// admin only
+	protected.HandleFunc("/menu", handler.Create).Methods("POST")
+	protected.HandleFunc("/menu/{id}", handler.Update).Methods("PATCH")
+	protected.HandleFunc("/menu/{id}", handler.Delete).Methods("DELETE")
+	protected.HandleFunc("/menu/{id}/restore", handler.Restore).Methods("PATCH")
 }

@@ -16,6 +16,9 @@ type Config struct {
 		Password string
 		Name     string
 	}
+	Secret struct {
+		JwtSecretKey string
+	}
 }
 
 func LoadConfig() (*Config, error) {
@@ -34,6 +37,9 @@ func LoadConfig() (*Config, error) {
 	config.Database.User = os.Getenv("DB_USER")
 	config.Database.Password = os.Getenv("DB_PASSWORD")
 	config.Database.Name = os.Getenv("DB_NAME")
+
+	// Secret
+	config.Secret.JwtSecretKey = os.Getenv("JWT_SECRET_KEY")
 
 	return config, nil
 }

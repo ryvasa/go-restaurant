@@ -5,11 +5,11 @@ import (
 	"github.com/ryvasa/go-restaurant/internal/delivery/http/handler"
 )
 
-func ReviewRoutes(r *mux.Router, reviewHandler handler.ReviewHandler) {
-
-	r.HandleFunc("/review/menu/{id}", reviewHandler.GetAllByMenuId).Methods("GET")
-	r.HandleFunc("/review", reviewHandler.Create).Methods("POST")
-	r.HandleFunc("/review/{id}", reviewHandler.GetOneById).Methods("GET")
-	r.HandleFunc("/review/{id}", reviewHandler.Update).Methods("PATCH")
-	// r.HandleFunc("/review/{id}", reviewHandler.Delete).Methods("DELETE")
+func ReviewRoutes(public, protected *mux.Router, handler handler.ReviewHandler) {
+	// no auth
+	public.HandleFunc("/review/menu/{id}", handler.GetAllByMenuId).Methods("GET")
+	public.HandleFunc("/review/{id}", handler.GetOneById).Methods("GET")
+	// all role
+	protected.HandleFunc("/review", handler.Create).Methods("POST")
+	protected.HandleFunc("/review/{id}", handler.Update).Methods("PATCH")
 }

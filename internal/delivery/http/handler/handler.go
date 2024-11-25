@@ -4,6 +4,7 @@ type Handlers struct {
 	MenuHandler   *MenuHandlerImpl
 	UserHandler   *UserHandlerImpl
 	ReviewHandler *ReviewHandlerImpl
+	AuthHandler   *AuthHandlerImpl
 	// Tambahkan handler lain di sini
 	// OrderHandler *OrderHandler
 	// UserHandler  *UserHandler
@@ -13,14 +14,12 @@ func NewHandlers(
 	menuHandler *MenuHandlerImpl,
 	userHandler *UserHandlerImpl,
 	reviewHandler *ReviewHandlerImpl,
-	// Tambahkan parameter handler lain
-	// orderHandler *OrderHandler,
-	// userHandler *UserHandler,
+	AuthHandler *AuthHandlerImpl,
 ) *Handlers {
 	return &Handlers{
 		MenuHandler:   menuHandler,
 		UserHandler:   userHandler,
 		ReviewHandler: reviewHandler,
-		// OrderHandler: orderHandler,
+		AuthHandler:   AuthHandler,
 	}
 }
