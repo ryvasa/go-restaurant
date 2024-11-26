@@ -13,5 +13,5 @@ type MenuRepository interface {
 	Update(tx *sql.Tx, menu domain.Menu) (domain.Menu, error)
 	Delete(tx *sql.Tx, id string) error
 	Restore(tx *sql.Tx, id string) (domain.Menu, error)
-	GetDeletedMenuById(tx *sql.Tx, id string) ([]domain.Menu, error)
+	GetDeletedMenuById(tx *sql.Tx, id string) (domain.Menu, error)
 }

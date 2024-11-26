@@ -7,6 +7,6 @@ import (
 )
 
 type OrderRepository interface {
-	Create(tx *sql.Tx, review domain.Order) (domain.Order, error)
+	Create(tx *sql.Tx, order domain.Order) (domain.Order, error)
 	GetOneById(tx *sql.Tx, id string) (domain.Order, error)
 }

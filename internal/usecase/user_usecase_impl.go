@@ -33,11 +33,7 @@ func (u *UserUsecaseImpl) GetAll(ctx context.Context) ([]domain.User, error) {
 			tx.Rollback()
 		}
 	}()
-	users, err := u.userRepo.GetAll(tx)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to get all users")
-		return nil, utils.NewInternalError("Failed to get all users")
-	}
+	users, _ := u.userRepo.GetAll(tx)
 
 	if err = tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
@@ -64,7 +60,7 @@ func (u *UserUsecaseImpl) Create(ctx context.Context, req dto.CreateUserRequest)
 		return domain.User{}, utils.NewValidationError(err)
 	}
 
-	user, err := u.userRepo.GetByEmail(tx, req.Email)
+	user, _ := u.userRepo.GetByEmail(tx, req.Email)
 	if user.Email == req.Email {
 		logger.Log.WithError(err).Error("Error email already exists")
 		return domain.User{}, utils.NewConflictError("Email already exists")
@@ -84,11 +80,7 @@ func (u *UserUsecaseImpl) Create(ctx context.Context, req dto.CreateUserRequest)
 		Role:     "customer",
 	}
 
-	createdUser, err := u.userRepo.Create(tx, user)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to create user")
-		return domain.User{}, utils.NewInternalError("Failed to create user")
-	}
+	createdUser, _ := u.userRepo.Create(tx, user)
 
 	if err = tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
@@ -109,11 +101,8 @@ func (u *UserUsecaseImpl) Get(ctx context.Context, id string) (domain.User, erro
 			tx.Rollback()
 		}
 	}()
-	user, err := u.userRepo.Get(tx, id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error user not found")
-		return domain.User{}, utils.NewNotFoundError("User not found")
-	}
+	user, _ := u.userRepo.Get(tx, id)
+
 	if err = tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
 		return domain.User{}, utils.NewInternalError("Failed to commit transaction")
@@ -144,13 +133,9 @@ func (u *UserUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateU
 		return domain.User{}, utils.NewValidationError("Invalid id format")
 	}
 
-	_, err = u.userRepo.Get(tx, id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error not found")
-		return domain.User{}, utils.NewNotFoundError("User not found")
-	}
+	u.userRepo.Get(tx, id)
 
-	user, err := u.userRepo.GetByEmail(tx, req.Email)
+	user, _ := u.userRepo.GetByEmail(tx, req.Email)
 	if user.Email == req.Email {
 		logger.Log.WithError(err).Error("Error email already exists")
 		return domain.User{}, utils.NewConflictError("Email already exists")
@@ -173,11 +158,7 @@ func (u *UserUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateU
 		user.Password = hashedPassword
 	}
 
-	updatedUser, err := u.userRepo.Update(tx, user)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to update user")
-		return domain.User{}, utils.NewInternalError("Failed to update user")
-	}
+	updatedUser, _ := u.userRepo.Update(tx, user)
 
 	if err = tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
@@ -210,11 +191,7 @@ func (u *UserUsecaseImpl) Delete(ctx context.Context, id string) error {
 		return utils.NewNotFoundError("User not found")
 	}
 
-	err = u.userRepo.Delete(tx, id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to delete user")
-		return utils.NewInternalError("Failed to delete user")
-	}
+	u.userRepo.Delete(tx, id)
 
 	if err = tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
@@ -242,16 +219,10 @@ func (u *UserUsecaseImpl) Restore(ctx context.Context, id string) (domain.User, 
 		return domain.User{}, utils.NewValidationError("Invalid ID format")
 	}
 
-	if _, err := u.userRepo.GetDeletedUserById(tx, id); err != nil {
-		logger.Log.WithError(err).Error("Error user not found to restore")
-		return domain.User{}, utils.NewNotFoundError("User not found to restore")
-	}
+	u.userRepo.GetDeletedUserById(tx, id)
 
-	restoredUser, err := u.userRepo.Restore(tx, id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to restore user")
-		return domain.User{}, utils.NewInternalError("Failed to restore user")
-	}
+	restoredUser, _ := u.userRepo.Restore(tx, id)
+
 	if err = tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
 		return domain.User{}, utils.NewInternalError("Failed to commit transaction")

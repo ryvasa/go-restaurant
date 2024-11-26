@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
@@ -31,6 +32,8 @@ func NewOrderUsecase(db *sql.DB, orderRepo repository.OrderRepository, menuRepo 
 }
 
 func (u *OrderUsecaseImpl) Create(ctx context.Context, req dto.CreateOrderDto, userId string) (domain.Order, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	tx, err := u.db.BeginTx(ctx, nil)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error begin transaction")
@@ -57,11 +60,8 @@ func (u *OrderUsecaseImpl) Create(ctx context.Context, req dto.CreateOrderDto, u
 	for _, menu := range req.Menu {
 		menuId := menu.MenuId
 
-		existingMenu, err := u.menuRepo.Get(tx, menuId)
-		if err != nil {
-			logger.Log.WithError(err).Error("Error user not found")
-			return domain.Order{}, utils.NewNotFoundError("Menu not found, order rejected")
-		}
+		existingMenu, _ := u.menuRepo.Get(tx, menuId)
+
 		amount += (existingMenu.Price * menu.Quantity)
 	}
 
@@ -71,11 +71,8 @@ func (u *OrderUsecaseImpl) Create(ctx context.Context, req dto.CreateOrderDto, u
 		Amount: amount,
 	}
 
-	createdOrder, err := u.orderRepo.Create(tx, order)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to create order")
-		return domain.Order{}, utils.NewInternalError("Failed to create order")
-	}
+	createdOrder, _ := u.orderRepo.Create(tx, order)
+
 	for _, menu := range req.Menu {
 		menuId, err := uuid.Parse(menu.MenuId)
 		if err != nil {
@@ -87,12 +84,9 @@ func (u *OrderUsecaseImpl) Create(ctx context.Context, req dto.CreateOrderDto, u
 			MenuId:   menuId,
 			Quantity: menu.Quantity,
 		}
-		_, err = u.orderMenuRepo.Create(tx, orderMenu)
-		if err != nil {
-			logger.Log.WithError(err).Error("Error failed to create order menu")
-			return domain.Order{}, utils.NewInternalError("Failed to create order menu")
-		}
+		_, _ = u.orderMenuRepo.Create(tx, orderMenu)
 	}
+
 	if err = tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
 		return domain.Order{}, utils.NewInternalError("Failed to commit transaction")
@@ -112,8 +106,10 @@ func (u *OrderUsecaseImpl) GetOneById(ctx context.Context, id string) (domain.Or
 			tx.Rollback()
 		}
 	}()
-	order, err := u.orderRepo.GetOneById(tx, id)
-	if err = tx.Commit(); err != nil {
+
+	order, _ := u.orderRepo.GetOneById(tx, id)
+
+	if err := tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
 		return domain.Order{}, utils.NewInternalError("Failed to commit transaction")
 	}
