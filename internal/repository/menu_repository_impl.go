@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"database/sql"
 	"time"
 
@@ -9,16 +8,15 @@ import (
 )
 
 type MenuRepositoryImpl struct {
-	db *sql.DB
 }
 
-func NewMenuRepository(db *sql.DB) MenuRepository {
-	return &MenuRepositoryImpl{db}
+func NewMenuRepository() MenuRepository {
+	return &MenuRepositoryImpl{}
 }
 
-func (r *MenuRepositoryImpl) GetAll(ctx context.Context) ([]domain.Menu, error) {
+func (r *MenuRepositoryImpl) GetAll(tx *sql.Tx) ([]domain.Menu, error) {
 	menus := []domain.Menu{}
-	rows, err := r.db.QueryContext(ctx, "SELECT id,name,description,price,category,image_url,rating,created_at,updated_at FROM menu WHERE deleted = false AND deleted_at IS NULL")
+	rows, err := tx.Query("SELECT id,name,description,price,category,image_url,rating,created_at,updated_at FROM menu WHERE deleted = false AND deleted_at IS NULL")
 	if err != nil {
 		return nil, err
 	}
@@ -35,15 +33,15 @@ func (r *MenuRepositoryImpl) GetAll(ctx context.Context) ([]domain.Menu, error) 
 	return menus, nil
 }
 
-func (r *MenuRepositoryImpl) Create(ctx context.Context, menu domain.Menu) (domain.Menu, error) {
-	_, err := r.db.ExecContext(ctx, "INSERT INTO menu (id,name,description,price,category,image_url) VALUES (?,  ?, ?, ?, ?, ?)",
+func (r *MenuRepositoryImpl) Create(tx *sql.Tx, menu domain.Menu) (domain.Menu, error) {
+	_, err := tx.Exec("INSERT INTO menu (id,name,description,price,category,image_url) VALUES (?,  ?, ?, ?, ?, ?)",
 		menu.Id, menu.Name, menu.Description, menu.Price, menu.Category, menu.ImageURL)
 
 	if err != nil {
 		return domain.Menu{}, err
 	}
 
-	createdMenu, err := r.Get(ctx, menu.Id.String())
+	createdMenu, err := r.Get(tx, menu.Id.String())
 	if err != nil {
 		return domain.Menu{}, err
 	}
@@ -51,18 +49,18 @@ func (r *MenuRepositoryImpl) Create(ctx context.Context, menu domain.Menu) (doma
 	return createdMenu, nil
 }
 
-func (r *MenuRepositoryImpl) Get(ctx context.Context, id string) (domain.Menu, error) {
+func (r *MenuRepositoryImpl) Get(tx *sql.Tx, id string) (domain.Menu, error) {
 	menu := domain.Menu{}
-	err := r.db.QueryRowContext(ctx, "SELECT id,name,description,price,category,image_url,rating,created_at,updated_at FROM menu WHERE id = ? AND deleted = false AND deleted_at IS NULL", id).Scan(&menu.Id, &menu.Name, &menu.Description, &menu.Price, &menu.Category, &menu.ImageURL, &menu.Rating, &menu.CreatedAt, &menu.UpdatedAt)
+	err := tx.QueryRow("SELECT id,name,description,price,category,image_url,rating,created_at,updated_at FROM menu WHERE id = ? AND deleted = false AND deleted_at IS NULL", id).Scan(&menu.Id, &menu.Name, &menu.Description, &menu.Price, &menu.Category, &menu.ImageURL, &menu.Rating, &menu.CreatedAt, &menu.UpdatedAt)
 	if err != nil {
 		return menu, err
 	}
 	return menu, nil
 }
 
-func (r *MenuRepositoryImpl) Update(ctx context.Context, menu domain.Menu) (domain.Menu, error) {
+func (r *MenuRepositoryImpl) Update(tx *sql.Tx, menu domain.Menu) (domain.Menu, error) {
 	// Ambil data menu yang ada
-	existingMenu, err := r.Get(ctx, menu.Id.String())
+	existingMenu, err := r.Get(tx, menu.Id.String())
 	if err != nil {
 		return domain.Menu{}, err
 	}
@@ -87,7 +85,7 @@ func (r *MenuRepositoryImpl) Update(ctx context.Context, menu domain.Menu) (doma
 	existingMenu.UpdatedAt = time.Now()
 
 	// Eksekusi query update
-	_, err = r.db.ExecContext(ctx,
+	_, err = tx.Exec(
 		"UPDATE menu SET name = ?, price = ?, updated_at = ?, description = ?, category = ?, image_url = ? WHERE id = ?",
 		existingMenu.Name,
 		existingMenu.Price,
@@ -101,11 +99,11 @@ func (r *MenuRepositoryImpl) Update(ctx context.Context, menu domain.Menu) (doma
 		return domain.Menu{}, err
 	}
 
-	return r.Get(ctx, existingMenu.Id.String())
+	return r.Get(tx, existingMenu.Id.String())
 }
 
-func (r *MenuRepositoryImpl) Delete(ctx context.Context, id string) error {
-	_, err := r.db.ExecContext(ctx, "UPDATE menu SET deleted = ?, deleted_at = ? WHERE id = ?", true, time.Now(), id)
+func (r *MenuRepositoryImpl) Delete(tx *sql.Tx, id string) error {
+	_, err := tx.Exec("UPDATE menu SET deleted = ?, deleted_at = ? WHERE id = ?", true, time.Now(), id)
 	if err != nil {
 		return err
 	}
@@ -113,18 +111,18 @@ func (r *MenuRepositoryImpl) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *MenuRepositoryImpl) Restore(ctx context.Context, id string) (domain.Menu, error) {
-	_, err := r.db.ExecContext(ctx, "UPDATE menu SET deleted = ?, deleted_at = ? WHERE id = ?", false, nil, id)
+func (r *MenuRepositoryImpl) Restore(tx *sql.Tx, id string) (domain.Menu, error) {
+	_, err := tx.Exec("UPDATE menu SET deleted = ?, deleted_at = ? WHERE id = ?", false, nil, id)
 	if err != nil {
 		return domain.Menu{}, err
 	}
-	menu, _ := r.Get(ctx, id)
+	menu, _ := r.Get(tx, id)
 	return menu, nil
 }
 
-func (r *MenuRepositoryImpl) GetDeletedMenuById(ctx context.Context, id string) ([]domain.Menu, error) {
+func (r *MenuRepositoryImpl) GetDeletedMenuById(tx *sql.Tx, id string) ([]domain.Menu, error) {
 	menus := []domain.Menu{}
-	rows, err := r.db.QueryContext(ctx, "SELECT id,name,description,price,category,image_url,rating,created_at,updated_at FROM menu WHERE deleted = true AND deleted_at IS NOT NULL AND id = ?", id)
+	rows, err := tx.Query("SELECT id,name,description,price,category,image_url,rating,created_at,updated_at FROM menu WHERE deleted = true AND deleted_at IS NOT NULL AND id = ?", id)
 	if err != nil {
 		return nil, err
 	}

@@ -1,33 +1,31 @@
 package repository
 
 import (
-	"context"
 	"database/sql"
 
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
 )
 
 type OrderRepositoryImpl struct {
-	db *sql.DB
 }
 
-func NewOrderRepository(db *sql.DB) OrderRepository {
-	return &OrderRepositoryImpl{db}
+func NewOrderRepository() OrderRepository {
+	return &OrderRepositoryImpl{}
 }
-func (r *OrderRepositoryImpl) Create(ctx context.Context, order domain.Order) (domain.Order, error) {
-	_, err := r.db.ExecContext(ctx,
+func (r *OrderRepositoryImpl) Create(tx *sql.Tx, order domain.Order) (domain.Order, error) {
+	_, err := tx.Exec(
 		"INSERT INTO orders (id, user_id, amount) VALUES (?, ?, ?)",
 		order.Id, order.UserId, order.Amount)
 	if err != nil {
 		return domain.Order{}, err
 	}
-	return r.GetOneById(ctx, order.Id.String())
+	return r.GetOneById(tx, order.Id.String())
 }
-func (r *OrderRepositoryImpl) GetOneById(ctx context.Context, id string) (domain.Order, error) {
+func (r *OrderRepositoryImpl) GetOneById(tx *sql.Tx, id string) (domain.Order, error) {
 	order := domain.Order{}
 	var paymentMethod sql.NullString
 
-	err := r.db.QueryRowContext(ctx,
+	err := tx.QueryRow(
 		"SELECT id, amount, payment_method, payment_status, status, user_id, created_at, updated_at FROM orders WHERE id = ? AND deleted = false AND deleted_at IS NULL",
 		id).Scan(
 		&order.Id,

@@ -1,34 +1,32 @@
 package repository
 
 import (
-	"context"
 	"database/sql"
 
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
 )
 
 type OrderMenuRepositoryImpl struct {
-	db *sql.DB
 }
 
-func NewOrderMenuRepository(db *sql.DB) OrderMenuRepository {
-	return &OrderMenuRepositoryImpl{db}
+func NewOrderMenuRepository() OrderMenuRepository {
+	return &OrderMenuRepositoryImpl{}
 }
 
-func (r *OrderMenuRepositoryImpl) Create(ctx context.Context, orderMenu domain.OrderMenu) (domain.OrderMenu, error) {
-	_, err := r.db.ExecContext(ctx,
+func (r *OrderMenuRepositoryImpl) Create(tx *sql.Tx, orderMenu domain.OrderMenu) (domain.OrderMenu, error) {
+	_, err := tx.Exec(
 		"INSERT INTO order_menu (order_id, menu_id, quantity) VALUES (?, ?, ?)",
 		orderMenu.OrderId, orderMenu.MenuId, orderMenu.Quantity)
 	if err != nil {
 		return domain.OrderMenu{}, err
 	}
-	return r.GetOneByOrderIdAndMenuId(ctx, orderMenu.OrderId.String(), orderMenu.MenuId.String())
+	return r.GetOneByOrderIdAndMenuId(tx, orderMenu.OrderId.String(), orderMenu.MenuId.String())
 }
 
-func (r *OrderMenuRepositoryImpl) GetOneByOrderIdAndMenuId(ctx context.Context, orderId, menuId string) (domain.OrderMenu, error) {
+func (r *OrderMenuRepositoryImpl) GetOneByOrderIdAndMenuId(tx *sql.Tx, orderId, menuId string) (domain.OrderMenu, error) {
 	orderMenu := domain.OrderMenu{}
 
-	err := r.db.QueryRowContext(ctx,
+	err := tx.QueryRow(
 		"SELECT  order_id, menu_id, quantity FROM order_menu WHERE order_id = ? AND menu_id = ?",
 		orderId, menuId).Scan(
 		&orderMenu.OrderId,
@@ -42,10 +40,10 @@ func (r *OrderMenuRepositoryImpl) GetOneByOrderIdAndMenuId(ctx context.Context, 
 	return orderMenu, nil
 }
 
-func (r *OrderMenuRepositoryImpl) GetAllByOrderId(ctx context.Context, id string) (domain.OrderMenu, error) {
+func (r *OrderMenuRepositoryImpl) GetAllByOrderId(tx *sql.Tx, id string) (domain.OrderMenu, error) {
 	orderMenu := domain.OrderMenu{}
 
-	err := r.db.QueryRowContext(ctx,
+	err := tx.QueryRow(
 		"SELECT  order_id, menu_id, quantity FROM order_menu WHERE order_id = ? AND deleted = false AND deleted_at IS NULL",
 		id).Scan(
 		&orderMenu.OrderId,

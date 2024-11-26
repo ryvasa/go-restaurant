@@ -2,7 +2,7 @@ package usecase
 
 import (
 	"context"
-	"time"
+	"database/sql"
 
 	"github.com/google/uuid"
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
@@ -13,44 +13,66 @@ import (
 )
 
 type ReviewUsecaseImpl struct {
+	db         *sql.DB
 	reviewRepo repository.ReviewRepository
 	userRepo   repository.UserRepository
 	menuRepo   repository.MenuRepository
 }
 
-func NewReviewUsecase(reviewRepo repository.ReviewRepository, userRepo repository.UserRepository, menuRepo repository.MenuRepository) ReviewUsecase {
-	return &ReviewUsecaseImpl{reviewRepo, userRepo, menuRepo}
+func NewReviewUsecase(db *sql.DB, reviewRepo repository.ReviewRepository, userRepo repository.UserRepository, menuRepo repository.MenuRepository) ReviewUsecase {
+	return &ReviewUsecaseImpl{db, reviewRepo, userRepo, menuRepo}
 }
 
 func (u *ReviewUsecaseImpl) GetAllByMenuId(ctx context.Context, id string) ([]domain.Review, error) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-	reviews, err := u.reviewRepo.GetAllByMenuId(ctx, id)
+	tx, err := u.db.BeginTx(ctx, nil)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error begin transaction")
+		return []domain.Review{}, utils.NewInternalError("Failed to begin transaction")
+	}
+	defer func() {
+		if err != nil {
+			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
+			tx.Rollback()
+		}
+	}()
+	reviews, err := u.reviewRepo.GetAllByMenuId(tx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to get all reviews menu")
 		return nil, utils.NewInternalError("Failed to get all reviews menu")
+	}
+	if err = tx.Commit(); err != nil {
+		logger.Log.WithError(err).Error("Error failed to commit transaction")
+		return []domain.Review{}, utils.NewInternalError("Failed to commit transaction")
 	}
 	return reviews, nil
 }
 
 func (u *ReviewUsecaseImpl) Create(ctx context.Context, req dto.CreateReviewRequest, userId string) (domain.Review, error) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
+	tx, err := u.db.BeginTx(ctx, nil)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error begin transaction")
+		return domain.Review{}, utils.NewInternalError("Failed to begin transaction")
+	}
+	defer func() {
+		if err != nil {
+			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
+			tx.Rollback()
+		}
+	}()
 	if err := utils.ValidateStruct(req); len(err) > 0 {
 		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
 		return domain.Review{}, utils.NewValidationError(err)
 	}
-	user, err := u.userRepo.Get(ctx, userId)
+	user, err := u.userRepo.Get(tx, userId)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error user not found")
 		return domain.Review{}, utils.NewNotFoundError("User not found")
 	}
 
 	menuId := req.MenuId
-	menu, err := u.menuRepo.Get(ctx, menuId)
+	menu, err := u.menuRepo.Get(tx, menuId)
 	if err != nil {
-		logger.Log.WithError(err).Error("Error user not found")
+		logger.Log.WithError(err).Error("Error menu not found")
 		return domain.Review{}, utils.NewNotFoundError("Menu not found")
 	}
 
@@ -61,34 +83,64 @@ func (u *ReviewUsecaseImpl) Create(ctx context.Context, req dto.CreateReviewRequ
 		UserId:  user.Id,
 		MenuId:  menu.Id,
 	}
-	err = u.reviewRepo.Create(ctx, review)
+	err = u.reviewRepo.Create(tx, review)
 	if err != nil {
 		return domain.Review{}, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		logger.Log.WithError(err).Error("Error failed to commit transaction")
+		return domain.Review{}, utils.NewInternalError("Failed to commit transaction")
 	}
 	return review, nil
 }
 
 func (u *ReviewUsecaseImpl) GetOneById(ctx context.Context, id string) (domain.Review, error) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-	review, err := u.reviewRepo.GetOneById(ctx, id)
+	tx, err := u.db.BeginTx(ctx, nil)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error begin transaction")
+		return domain.Review{}, utils.NewInternalError("Failed to begin transaction")
+	}
+	defer func() {
+		if err != nil {
+			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
+			tx.Rollback()
+		}
+	}()
+
+	review, err := u.reviewRepo.GetOneById(tx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error review not found")
 		return domain.Review{}, utils.NewNotFoundError("Review not found")
+	}
+
+	if err = tx.Commit(); err != nil {
+		logger.Log.WithError(err).Error("Error failed to commit transaction")
+		return domain.Review{}, utils.NewInternalError("Failed to commit transaction")
 	}
 	return review, err
 }
 
 func (u *ReviewUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateReviewRequest) (domain.Review, error) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
+	tx, err := u.db.BeginTx(ctx, nil)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error begin transaction")
+		return domain.Review{}, utils.NewInternalError("Failed to begin transaction")
+	}
+	defer func() {
+		if err != nil {
+			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
+			tx.Rollback()
+		}
+	}()
+
 	reviewId, err := uuid.Parse(id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error invalid id format")
 		return domain.Review{}, utils.NewValidationError("Invalid id format")
 	}
 
-	_, err = u.reviewRepo.GetOneById(ctx, id)
+	_, err = u.reviewRepo.GetOneById(tx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error review not found")
 		return domain.Review{}, utils.NewNotFoundError("Review not found")
@@ -99,9 +151,13 @@ func (u *ReviewUsecaseImpl) Update(ctx context.Context, id string, req dto.Updat
 		Rating:  req.Rating,
 		Comment: req.Comment,
 	}
-	err = u.reviewRepo.Update(ctx, review)
+	err = u.reviewRepo.Update(tx, review)
 	if err != nil {
 		return domain.Review{}, err
+	}
+	if err = tx.Commit(); err != nil {
+		logger.Log.WithError(err).Error("Error failed to commit transaction")
+		return domain.Review{}, utils.NewInternalError("Failed to commit transaction")
 	}
 	return review, nil
 }
