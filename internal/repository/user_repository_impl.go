@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"database/sql"
 	"time"
 
@@ -9,16 +8,15 @@ import (
 )
 
 type UserRepositoryImpl struct {
-	db *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) UserRepository {
-	return &UserRepositoryImpl{db}
+func NewUserRepository() UserRepository {
+	return &UserRepositoryImpl{}
 }
 
-func (r *UserRepositoryImpl) GetAll(ctx context.Context) ([]domain.User, error) {
+func (r *UserRepositoryImpl) GetAll(tx *sql.Tx) ([]domain.User, error) {
 	users := []domain.User{}
-	rows, err := r.db.QueryContext(ctx, "SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE deleted = false AND deleted_at IS NULL")
+	rows, err := tx.Query("SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE deleted = false AND deleted_at IS NULL")
 	if err != nil {
 		return nil, err
 	}
@@ -35,14 +33,14 @@ func (r *UserRepositoryImpl) GetAll(ctx context.Context) ([]domain.User, error) 
 	return users, nil
 }
 
-func (r *UserRepositoryImpl) Create(ctx context.Context, user domain.User) (domain.User, error) {
-	_, err := r.db.ExecContext(ctx, "INSERT INTO users (id,name,email,password,role) VALUES (?, ?,  ?, ?, ?)",
+func (r *UserRepositoryImpl) Create(tx *sql.Tx, user domain.User) (domain.User, error) {
+	_, err := tx.Exec("INSERT INTO users (id,name,email,password,role) VALUES (?, ?,  ?, ?, ?)",
 		user.Id, user.Name, user.Email, user.Password, user.Role)
 	if err != nil {
 		return domain.User{}, err
 	}
 
-	createdUser, err := r.Get(ctx, user.Id.String())
+	createdUser, err := r.Get(tx, user.Id.String())
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -50,11 +48,10 @@ func (r *UserRepositoryImpl) Create(ctx context.Context, user domain.User) (doma
 	return createdUser, nil
 }
 
-func (r *UserRepositoryImpl) Get(ctx context.Context, id string) (domain.User, error) {
+func (r *UserRepositoryImpl) Get(tx *sql.Tx, id string) (domain.User, error) {
 	user := domain.User{}
 	var phone sql.NullString
-	err := r.db.QueryRowContext(ctx,
-		"SELECT id, name, email, phone, role, created_at, updated_at FROM users WHERE id = ? AND deleted = false AND deleted_at IS NULL",
+	err := tx.QueryRow("SELECT id, name, email, phone, role, created_at, updated_at FROM users WHERE id = ? AND deleted = false AND deleted_at IS NULL",
 		id).Scan(
 		&user.Id,
 		&user.Name,
@@ -78,9 +75,9 @@ func (r *UserRepositoryImpl) Get(ctx context.Context, id string) (domain.User, e
 	return user, nil
 }
 
-func (r *UserRepositoryImpl) Update(ctx context.Context, user domain.User) (domain.User, error) {
+func (r *UserRepositoryImpl) Update(tx *sql.Tx, user domain.User) (domain.User, error) {
 	// Ambil data user yang ada
-	existingUser, err := r.Get(ctx, user.Id.String())
+	existingUser, err := r.Get(tx, user.Id.String())
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -103,18 +100,18 @@ func (r *UserRepositoryImpl) Update(ctx context.Context, user domain.User) (doma
 	}
 
 	// Eksekusi query update
-	_, err = r.db.ExecContext(ctx, "UPDATE users SET name = ?, email = ?, password = ?, phone = ?, role = ? WHERE id = ?",
+	_, err = tx.Exec("UPDATE users SET name = ?, email = ?, password = ?, phone = ?, role = ? WHERE id = ?",
 		existingUser.Name, existingUser.Email, existingUser.Password, existingUser.Phone, existingUser.Role, existingUser.Id)
 	if err != nil {
 		return domain.User{}, err
 	}
 
-	return r.Get(ctx, user.Id.String())
+	return r.Get(tx, user.Id.String())
 }
 
-func (r *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (domain.User, error) {
+func (r *UserRepositoryImpl) GetByEmail(tx *sql.Tx, email string) (domain.User, error) {
 	user := domain.User{}
-	err := r.db.QueryRowContext(ctx, "SELECT id,name,password,email,phone,role,created_at,updated_at FROM users WHERE email = ?", email).Scan(&user.Id, &user.Name, &user.Password, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+	err := tx.QueryRow("SELECT id,name,password,email,phone,role,created_at,updated_at FROM users WHERE email = ?", email).Scan(&user.Id, &user.Name, &user.Password, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		return user, err
@@ -122,8 +119,8 @@ func (r *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (doma
 	return user, nil
 }
 
-func (r *UserRepositoryImpl) Delete(ctx context.Context, id string) error {
-	_, err := r.db.ExecContext(ctx, "UPDATE users SET deleted = ?, deleted_at = ? WHERE id = ?", true, time.Now(), id)
+func (r *UserRepositoryImpl) Delete(tx *sql.Tx, id string) error {
+	_, err := tx.Exec("UPDATE users SET deleted = ?, deleted_at = ? WHERE id = ?", true, time.Now(), id)
 	if err != nil {
 		return err
 	}
@@ -131,18 +128,18 @@ func (r *UserRepositoryImpl) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *UserRepositoryImpl) Restore(ctx context.Context, id string) (domain.User, error) {
-	_, err := r.db.ExecContext(ctx, "UPDATE users SET deleted = ?, deleted_at = ? WHERE id = ?", false, nil, id)
+func (r *UserRepositoryImpl) Restore(tx *sql.Tx, id string) (domain.User, error) {
+	_, err := tx.Exec("UPDATE users SET deleted = ?, deleted_at = ? WHERE id = ?", false, nil, id)
 	if err != nil {
 		return domain.User{}, err
 	}
-	user, _ := r.Get(ctx, id)
+	user, _ := r.Get(tx, id)
 	return user, nil
 }
 
-func (r *UserRepositoryImpl) GetDeletedUserById(ctx context.Context, id string) ([]domain.User, error) {
+func (r *UserRepositoryImpl) GetDeletedUserById(tx *sql.Tx, id string) ([]domain.User, error) {
 	users := []domain.User{}
-	rows, err := r.db.QueryContext(ctx, "SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE deleted = true AND deleted_at IS NOT NULL AND id = ?", id)
+	rows, err := tx.Query("SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE deleted = true AND deleted_at IS NOT NULL AND id = ?", id)
 	if err != nil {
 		return nil, err
 	}

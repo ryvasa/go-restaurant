@@ -2,7 +2,7 @@ package usecase
 
 import (
 	"context"
-	"time"
+	"database/sql"
 
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
@@ -12,23 +12,35 @@ import (
 )
 
 type AuthUsecaseImpl struct {
+	db        *sql.DB
 	userRepo  repository.UserRepository
 	tokenUtil *utils.TokenUtil
 }
 
 func NewAuthUsecase(
+	db *sql.DB,
 	userRepo repository.UserRepository,
 	tokenUtil *utils.TokenUtil,
 ) AuthUsecase {
 	return &AuthUsecaseImpl{
+		db:        db,
 		userRepo:  userRepo,
 		tokenUtil: tokenUtil,
 	}
 }
 
 func (u *AuthUsecaseImpl) Login(ctx context.Context, req dto.LoginDto) (domain.Auth, error) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
+	tx, err := u.db.BeginTx(ctx, nil)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error begin transaction")
+		return domain.Auth{}, utils.NewInternalError("Failed to begin transaction")
+	}
+	defer func() {
+		if err != nil {
+			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
+			tx.Rollback()
+		}
+	}()
 
 	if err := utils.ValidateStruct(req); len(err) > 0 {
 		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
@@ -36,7 +48,7 @@ func (u *AuthUsecaseImpl) Login(ctx context.Context, req dto.LoginDto) (domain.A
 	}
 
 	// Cari user berdasarkan email
-	user, err := u.userRepo.GetByEmail(ctx, req.Email)
+	user, err := u.userRepo.GetByEmail(tx, req.Email)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error user not found")
 		return domain.Auth{}, utils.NewNotFoundError("Invalid email or password")
@@ -65,6 +77,9 @@ func (u *AuthUsecaseImpl) Login(ctx context.Context, req dto.LoginDto) (domain.A
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 	}
-
+	if err = tx.Commit(); err != nil {
+		logger.Log.WithError(err).Error("Error failed to commit transaction")
+		return domain.Auth{}, utils.NewInternalError("Failed to commit transaction")
+	}
 	return auth, nil
 }

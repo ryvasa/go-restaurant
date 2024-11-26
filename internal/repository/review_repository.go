@@ -1,14 +1,14 @@
 package repository
 
 import (
-	"context"
+	"database/sql"
 
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
 )
 
 type ReviewRepository interface {
-	GetAllByMenuId(ctx context.Context, id string) ([]domain.Review, error)
-	Create(ctx context.Context, review domain.Review) error
-	GetOneById(ctx context.Context, id string) (domain.Review, error)
-	Update(ctx context.Context, review domain.Review) error
+	GetAllByMenuId(tx *sql.Tx, id string) ([]domain.Review, error)
+	Create(tx *sql.Tx, review domain.Review) error
+	GetOneById(tx *sql.Tx, id string) (domain.Review, error)
+	Update(tx *sql.Tx, review domain.Review) error
 }

@@ -1,13 +1,13 @@
 package repository
 
 import (
-	"context"
+	"database/sql"
 
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
 )
 
 type OrderMenuRepository interface {
-	Create(ctx context.Context, review domain.OrderMenu) (domain.OrderMenu, error)
-	GetOneByOrderIdAndMenuId(ctx context.Context, orderId, menuId string) (domain.OrderMenu, error)
-	GetAllByOrderId(ctx context.Context, orderId string) (domain.OrderMenu, error)
+	Create(tx *sql.Tx, review domain.OrderMenu) (domain.OrderMenu, error)
+	GetOneByOrderIdAndMenuId(tx *sql.Tx, orderId, menuId string) (domain.OrderMenu, error)
+	GetAllByOrderId(tx *sql.Tx, orderId string) (domain.OrderMenu, error)
 }
