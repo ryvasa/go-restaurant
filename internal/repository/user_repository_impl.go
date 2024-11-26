@@ -41,13 +41,14 @@ func (r *UserRepositoryImpl) Create(tx *sql.Tx, user domain.User) (domain.User, 
 	_, err := tx.Exec("INSERT INTO users (id,name,email,password,role) VALUES (?, ?,  ?, ?, ?)",
 		user.Id, user.Name, user.Email, user.Password, user.Role)
 	if err != nil {
-		return domain.User{}, err
+		logger.Log.WithError(err).Error("Error failed to create user")
+		return domain.User{}, utils.NewInternalError("Failed to create user")
 	}
 
 	createdUser, err := r.Get(tx, user.Id.String())
 	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to create user")
-		return domain.User{}, utils.NewInternalError("Failed to create user")
+		logger.Log.WithError(err).Error("Error failed to get created user")
+		return domain.User{}, utils.NewInternalError("Failed to get created user")
 	}
 
 	return createdUser, nil
