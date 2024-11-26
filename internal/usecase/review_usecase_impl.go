@@ -35,11 +35,8 @@ func (u *ReviewUsecaseImpl) GetAllByMenuId(ctx context.Context, id string) ([]do
 			tx.Rollback()
 		}
 	}()
-	reviews, err := u.reviewRepo.GetAllByMenuId(tx, id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to get all reviews menu")
-		return nil, utils.NewInternalError("Failed to get all reviews menu")
-	}
+	reviews, _ := u.reviewRepo.GetAllByMenuId(tx, id)
+
 	if err = tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
 		return []domain.Review{}, utils.NewInternalError("Failed to commit transaction")
@@ -69,12 +66,7 @@ func (u *ReviewUsecaseImpl) Create(ctx context.Context, req dto.CreateReviewRequ
 		return domain.Review{}, utils.NewNotFoundError("User not found")
 	}
 
-	menuId := req.MenuId
-	menu, err := u.menuRepo.Get(tx, menuId)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error menu not found")
-		return domain.Review{}, utils.NewNotFoundError("Menu not found")
-	}
+	menu, _ := u.menuRepo.Get(tx, req.MenuId)
 
 	review := domain.Review{
 		Id:      uuid.New(),
@@ -83,10 +75,7 @@ func (u *ReviewUsecaseImpl) Create(ctx context.Context, req dto.CreateReviewRequ
 		UserId:  user.Id,
 		MenuId:  menu.Id,
 	}
-	err = u.reviewRepo.Create(tx, review)
-	if err != nil {
-		return domain.Review{}, err
-	}
+	review, _ = u.reviewRepo.Create(tx, review)
 
 	if err = tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
@@ -108,11 +97,7 @@ func (u *ReviewUsecaseImpl) GetOneById(ctx context.Context, id string) (domain.R
 		}
 	}()
 
-	review, err := u.reviewRepo.GetOneById(tx, id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error review not found")
-		return domain.Review{}, utils.NewNotFoundError("Review not found")
-	}
+	review, _ := u.reviewRepo.GetOneById(tx, id)
 
 	if err = tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
@@ -140,24 +125,18 @@ func (u *ReviewUsecaseImpl) Update(ctx context.Context, id string, req dto.Updat
 		return domain.Review{}, utils.NewValidationError("Invalid id format")
 	}
 
-	_, err = u.reviewRepo.GetOneById(tx, id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error review not found")
-		return domain.Review{}, utils.NewNotFoundError("Review not found")
-	}
+	u.reviewRepo.GetOneById(tx, id)
 
 	review := domain.Review{
 		Id:      reviewId,
 		Rating:  req.Rating,
 		Comment: req.Comment,
 	}
-	err = u.reviewRepo.Update(tx, review)
-	if err != nil {
-		return domain.Review{}, err
-	}
+	updatedReview, _ := u.reviewRepo.Update(tx, review)
+
 	if err = tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
 		return domain.Review{}, utils.NewInternalError("Failed to commit transaction")
 	}
-	return review, nil
+	return updatedReview, nil
 }

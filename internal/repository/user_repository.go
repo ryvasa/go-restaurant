@@ -14,5 +14,5 @@ type UserRepository interface {
 	GetByEmail(tx *sql.Tx, email string) (domain.User, error)
 	Delete(tx *sql.Tx, id string) error
 	Restore(tx *sql.Tx, id string) (domain.User, error)
-	GetDeletedUserById(tx *sql.Tx, id string) ([]domain.User, error)
+	GetDeletedUserById(tx *sql.Tx, id string) (domain.User, error)
 }

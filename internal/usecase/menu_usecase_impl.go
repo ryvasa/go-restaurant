@@ -33,16 +33,13 @@ func (u *MenuUsecaseImpl) GetAll(ctx context.Context) ([]domain.Menu, error) {
 			tx.Rollback()
 		}
 	}()
-	users, err := u.menuRepo.GetAll(tx)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to get all menus")
-		return []domain.Menu{}, utils.NewInternalError("Failed to get all menus")
-	}
+	menu, _ := u.menuRepo.GetAll(tx)
+
 	if err = tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
 		return []domain.Menu{}, utils.NewInternalError("Failed to commit transaction")
 	}
-	return users, nil
+	return menu, nil
 }
 func (u *MenuUsecaseImpl) Create(ctx context.Context, req dto.CreateMenuRequest, file multipart.File) (domain.Menu, error) {
 	tx, err := u.db.BeginTx(ctx, nil)
@@ -77,13 +74,9 @@ func (u *MenuUsecaseImpl) Create(ctx context.Context, req dto.CreateMenuRequest,
 		Category:    req.Category,
 		ImageURL:    imagePath,
 	}
-	createdMenu, err := u.menuRepo.Create(tx, menu)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to create menu")
-		return domain.Menu{}, utils.NewInternalError("Failed to create menu")
-	}
+	createdMenu, _ := u.menuRepo.Create(tx, menu)
 
-	if err = tx.Commit(); err != nil {
+	if err := tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
 		return domain.Menu{}, utils.NewInternalError("Failed to commit transaction")
 	}
@@ -104,16 +97,13 @@ func (u *MenuUsecaseImpl) Get(ctx context.Context, id string) (domain.Menu, erro
 		}
 	}()
 
-	user, err := u.menuRepo.Get(tx, id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error menu not found")
-		return domain.Menu{}, utils.NewNotFoundError("Menu not found")
-	}
-	if err = tx.Commit(); err != nil {
+	menu, _ := u.menuRepo.Get(tx, id)
+
+	if err := tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
 		return domain.Menu{}, utils.NewInternalError("Failed to commit transaction")
 	}
-	return user, nil
+	return menu, nil
 }
 
 func (u *MenuUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateMenuRequest, file multipart.File) (domain.Menu, error) {
@@ -140,11 +130,7 @@ func (u *MenuUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateM
 		return domain.Menu{}, utils.NewValidationError("Invalid id format")
 	}
 
-	existingMenu, err := u.menuRepo.Get(tx, id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error menu not found")
-		return domain.Menu{}, utils.NewNotFoundError("Menu not found")
-	}
+	existingMenu, _ := u.menuRepo.Get(tx, id)
 
 	menu := domain.Menu{
 		Id:          menuId,
@@ -164,12 +150,9 @@ func (u *MenuUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateM
 		}
 		menu.ImageURL = imagePath
 	}
-	updatedMenu, err := u.menuRepo.Update(tx, menu)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to update menu")
-		return domain.Menu{}, utils.NewInternalError("Failed to update menu")
-	}
-	if err = tx.Commit(); err != nil {
+	updatedMenu, _ := u.menuRepo.Update(tx, menu)
+
+	if err := tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
 		return domain.Menu{}, utils.NewInternalError("Failed to commit transaction")
 	}
@@ -194,16 +177,11 @@ func (u *MenuUsecaseImpl) Delete(ctx context.Context, id string) error {
 		return utils.NewValidationError("Invalid ID format")
 	}
 
-	if _, err := u.menuRepo.Get(tx, id); err != nil {
-		logger.Log.WithError(err).Error("Error menu not found")
-		return utils.NewNotFoundError("Menu not found")
-	}
-	err = u.menuRepo.Delete(tx, id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to delete menu")
-		return utils.NewInternalError("Failed to delete menu")
-	}
-	if err = tx.Commit(); err != nil {
+	u.menuRepo.Get(tx, id)
+
+	u.menuRepo.Delete(tx, id)
+
+	if err := tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
 		return utils.NewInternalError("Failed to commit transaction")
 	}
@@ -228,16 +206,9 @@ func (u *MenuUsecaseImpl) Restore(ctx context.Context, id string) (domain.Menu, 
 		return domain.Menu{}, utils.NewValidationError("Invalid ID format")
 	}
 
-	if _, err := u.menuRepo.GetDeletedMenuById(tx, id); err != nil {
-		logger.Log.WithError(err).Error("Error menu not found to restore")
-		return domain.Menu{}, utils.NewNotFoundError("Menu not found to restore")
-	}
+	u.menuRepo.GetDeletedMenuById(tx, id)
 
-	restoredMenu, err := u.menuRepo.Restore(tx, id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to restore menu")
-		return domain.Menu{}, utils.NewInternalError("Failed to restore menu")
-	}
+	restoredMenu, _ := u.menuRepo.Restore(tx, id)
 
 	if err = tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")
