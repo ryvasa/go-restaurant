@@ -23,6 +23,14 @@ func NewValidationError(details interface{}) error {
 	}
 }
 
+func NewBadRequestError(message string) error {
+	return AppError{
+		HttpStatus: http.StatusBadRequest,
+		Code:       "BAD_REQUEST",
+		Message:    message,
+	}
+}
+
 func NewNotFoundError(message string) error {
 	return AppError{
 		HttpStatus: http.StatusNotFound,

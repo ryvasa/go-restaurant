@@ -12,7 +12,7 @@ type Order struct {
 	Status        string    `json:"status" validate:"required,oneof=pending processing success failed"`
 	PaymentMethod *string   `json:"payment_method,omitempty"`
 	PaymentStatus string    `json:"payment_status" validate:"required,oneof=paid unpaid"`
-	Amount        int       `json:"amount" validate:"required"`
+	Amount        float64   `json:"amount" validate:"required"`
 	CreatedAt     time.Time `json:"created_at" validate:"required"`
 	UpdatedAt     time.Time `json:"updated_at" validate:"required"`
 }

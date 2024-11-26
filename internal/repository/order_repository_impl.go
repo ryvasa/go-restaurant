@@ -4,8 +4,6 @@ import (
 	"database/sql"
 
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
-	"github.com/ryvasa/go-restaurant/pkg/logger"
-	"github.com/ryvasa/go-restaurant/utils"
 )
 
 type OrderRepositoryImpl struct {
@@ -19,8 +17,7 @@ func (r *OrderRepositoryImpl) Create(tx *sql.Tx, order domain.Order) (domain.Ord
 		"INSERT INTO orders (id, user_id, amount) VALUES (?, ?, ?)",
 		order.Id, order.UserId, order.Amount)
 	if err != nil {
-		logger.Log.WithError(err).Error("Error create order")
-		return domain.Order{}, utils.NewInternalError("Failed to create order")
+		return domain.Order{}, err
 	}
 	return r.GetOneById(tx, order.Id.String())
 }
@@ -43,8 +40,7 @@ func (r *OrderRepositoryImpl) GetOneById(tx *sql.Tx, id string) (domain.Order, e
 	)
 
 	if err != nil {
-		logger.Log.WithError(err).Error("Error order not found")
-		return domain.Order{}, utils.NewNotFoundError("Order not found")
+		return domain.Order{}, err
 	}
 
 	if paymentMethod.Valid {

@@ -56,13 +56,17 @@ func (u *OrderUsecaseImpl) Create(ctx context.Context, req dto.CreateOrderDto, u
 		logger.Log.WithError(err).Error("Error user not found")
 		return domain.Order{}, utils.NewNotFoundError("User not found, order rejected")
 	}
-	var amount int
+	var amount float64
 	for _, menu := range req.Menu {
 		menuId := menu.MenuId
 
-		existingMenu, _ := u.menuRepo.Get(tx, menuId)
+		existingMenu, err := u.menuRepo.Get(tx, menuId)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error menu not found")
+			return domain.Order{}, utils.NewNotFoundError("Menu not found")
+		}
 
-		amount += (existingMenu.Price * menu.Quantity)
+		amount += (existingMenu.Price * float64(menu.Quantity))
 	}
 
 	order := domain.Order{
@@ -71,7 +75,11 @@ func (u *OrderUsecaseImpl) Create(ctx context.Context, req dto.CreateOrderDto, u
 		Amount: amount,
 	}
 
-	createdOrder, _ := u.orderRepo.Create(tx, order)
+	createdOrder, err := u.orderRepo.Create(tx, order)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error failed to create order")
+		return domain.Order{}, utils.NewInternalError("Failed to create order")
+	}
 
 	for _, menu := range req.Menu {
 		menuId, err := uuid.Parse(menu.MenuId)
@@ -84,7 +92,11 @@ func (u *OrderUsecaseImpl) Create(ctx context.Context, req dto.CreateOrderDto, u
 			MenuId:   menuId,
 			Quantity: menu.Quantity,
 		}
-		_, _ = u.orderMenuRepo.Create(tx, orderMenu)
+		_, err = u.orderMenuRepo.Create(tx, orderMenu)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to create order menu")
+			return domain.Order{}, utils.NewInternalError("Failed to create order menu")
+		}
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -107,7 +119,11 @@ func (u *OrderUsecaseImpl) GetOneById(ctx context.Context, id string) (domain.Or
 		}
 	}()
 
-	order, _ := u.orderRepo.GetOneById(tx, id)
+	order, err := u.orderRepo.GetOneById(tx, id)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error order not found")
+		return domain.Order{}, utils.NewNotFoundError("Order not found")
+	}
 
 	if err := tx.Commit(); err != nil {
 		logger.Log.WithError(err).Error("Error failed to commit transaction")

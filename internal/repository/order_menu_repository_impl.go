@@ -4,8 +4,6 @@ import (
 	"database/sql"
 
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
-	"github.com/ryvasa/go-restaurant/pkg/logger"
-	"github.com/ryvasa/go-restaurant/utils"
 )
 
 type OrderMenuRepositoryImpl struct {
@@ -20,8 +18,7 @@ func (r *OrderMenuRepositoryImpl) Create(tx *sql.Tx, orderMenu domain.OrderMenu)
 		"INSERT INTO order_menu (order_id, menu_id, quantity) VALUES (?, ?, ?)",
 		orderMenu.OrderId, orderMenu.MenuId, orderMenu.Quantity)
 	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to create order menu")
-		return domain.OrderMenu{}, utils.NewInternalError("Failed to create order menu")
+		return domain.OrderMenu{}, err
 	}
 	return r.GetOneByOrderIdAndMenuId(tx, orderMenu.OrderId.String(), orderMenu.MenuId.String())
 }
@@ -38,8 +35,7 @@ func (r *OrderMenuRepositoryImpl) GetOneByOrderIdAndMenuId(tx *sql.Tx, orderId, 
 	)
 
 	if err != nil {
-		logger.Log.WithError(err).Error("Error order menu not found")
-		return domain.OrderMenu{}, utils.NewNotFoundError("Order menu not found")
+		return domain.OrderMenu{}, err
 	}
 	return orderMenu, nil
 }
