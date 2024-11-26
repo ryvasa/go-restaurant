@@ -57,7 +57,7 @@ func (r *ReviewRepositoryImpl) GetOneById(tx *sql.Tx, id string) (domain.Review,
 }
 
 func (r *ReviewRepositoryImpl) Update(tx *sql.Tx, review domain.Review) (domain.Review, error) {
-	_, err := tx.Exec("UPDATE review SET rating = $1, comment = $2, updated_at = $3 WHERE id = $4", review.Rating, review.Comment, review.UpdatedAt, review.Id)
+	_, err := tx.Exec("UPDATE review SET rating = ?, comment = ?, updated_at = ? WHERE id = ?", review.Rating, review.Comment, review.UpdatedAt, review.Id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to update review")
 		return domain.Review{}, utils.NewNotFoundError("Failed to update review")
