@@ -2,10 +2,9 @@ package repository
 
 import (
 	"database/sql"
+	"log"
 
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
-	"github.com/ryvasa/go-restaurant/pkg/logger"
-	"github.com/ryvasa/go-restaurant/utils"
 )
 
 type OrderRepositoryImpl struct {
@@ -19,8 +18,7 @@ func (r *OrderRepositoryImpl) Create(tx *sql.Tx, order domain.Order) (domain.Ord
 		"INSERT INTO orders (id, user_id, amount) VALUES (?, ?, ?)",
 		order.Id, order.UserId, order.Amount)
 	if err != nil {
-		logger.Log.WithError(err).Error("Error create order")
-		return domain.Order{}, utils.NewInternalError("Failed to create order")
+		return domain.Order{}, err
 	}
 	return r.GetOneById(tx, order.Id.String())
 }
@@ -43,8 +41,7 @@ func (r *OrderRepositoryImpl) GetOneById(tx *sql.Tx, id string) (domain.Order, e
 	)
 
 	if err != nil {
-		logger.Log.WithError(err).Error("Error order not found")
-		return domain.Order{}, utils.NewNotFoundError("Order not found")
+		return domain.Order{}, err
 	}
 
 	if paymentMethod.Valid {
@@ -54,4 +51,25 @@ func (r *OrderRepositoryImpl) GetOneById(tx *sql.Tx, id string) (domain.Order, e
 	}
 
 	return order, nil
+}
+
+func (r *OrderRepositoryImpl) UpdateOrderStatus(tx *sql.Tx, id string, order domain.Order) (domain.Order, error) {
+	_, err := tx.Exec(
+		"UPDATE orders SET status = ? WHERE id = ? AND deleted = false AND deleted_at IS NULL",
+		order.Status, id)
+	if err != nil {
+		return domain.Order{}, err
+	}
+	return r.GetOneById(tx, id)
+}
+
+func (r *OrderRepositoryImpl) UpdatePayment(tx *sql.Tx, id string, order domain.Order) (domain.Order, error) {
+	log.Println(id)
+	_, err := tx.Exec(
+		"UPDATE orders SET payment_status = ?, payment_method = ? WHERE id = ? AND deleted = false AND deleted_at IS NULL",
+		order.PaymentStatus, order.PaymentMethod, id)
+	if err != nil {
+		return domain.Order{}, err
+	}
+	return r.GetOneById(tx, id)
 }

@@ -93,8 +93,23 @@ func (h *ReviewHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 		logger.Log.WithError(err).Error("Error invalid request body")
 		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid request body"))
 	}
+	claims, ok := ctx.Value("user").(jwt.MapClaims)
+	if !ok {
+		logger.Log.Error("Error getting user claims from context")
+		utils.HttpResponse(w, http.StatusUnauthorized, nil,
+			utils.NewUnauthorizedError("Invalid user context"))
+		return
+	}
 
-	review, err := h.reviewUsecase.Update(ctx, id, req)
+	userId, ok := claims["sub"].(string)
+	if !ok {
+		logger.Log.Error("Error getting user ID from claims")
+		utils.HttpResponse(w, http.StatusUnauthorized, nil,
+			utils.NewUnauthorizedError("Invalid user ID"))
+		return
+	}
+
+	review, err := h.reviewUsecase.Update(ctx, id, userId, req)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to update review")
 		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)

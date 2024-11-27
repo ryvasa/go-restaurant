@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
-	"github.com/ryvasa/go-restaurant/pkg/logger"
-	"github.com/ryvasa/go-restaurant/utils"
 )
 
 type MenuRepositoryImpl struct {
@@ -20,8 +18,7 @@ func (r *MenuRepositoryImpl) GetAll(tx *sql.Tx) ([]domain.Menu, error) {
 	menus := []domain.Menu{}
 	rows, err := tx.Query("SELECT id,name,description,price,category,image_url,rating,created_at,updated_at FROM menu WHERE deleted = false AND deleted_at IS NULL")
 	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to get all menus")
-		return []domain.Menu{}, utils.NewInternalError("Failed to get all menus")
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -41,8 +38,7 @@ func (r *MenuRepositoryImpl) Create(tx *sql.Tx, menu domain.Menu) (domain.Menu, 
 		menu.Id, menu.Name, menu.Description, menu.Price, menu.Category, menu.ImageURL)
 
 	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to create menu")
-		return domain.Menu{}, utils.NewInternalError("Failed to create menu")
+		return domain.Menu{}, err
 	}
 
 	createdMenu, _ := r.Get(tx, menu.Id.String())
@@ -54,8 +50,8 @@ func (r *MenuRepositoryImpl) Get(tx *sql.Tx, id string) (domain.Menu, error) {
 	menu := domain.Menu{}
 	err := tx.QueryRow("SELECT id,name,description,price,category,image_url,rating,created_at,updated_at FROM menu WHERE id = ? AND deleted = false AND deleted_at IS NULL", id).Scan(&menu.Id, &menu.Name, &menu.Description, &menu.Price, &menu.Category, &menu.ImageURL, &menu.Rating, &menu.CreatedAt, &menu.UpdatedAt)
 	if err != nil {
-		logger.Log.WithError(err).Error("Error menu not found")
-		return domain.Menu{}, utils.NewNotFoundError("Menu not found")
+		return domain.Menu{}, err
+
 	}
 	return menu, nil
 }
@@ -98,8 +94,9 @@ func (r *MenuRepositoryImpl) Update(tx *sql.Tx, menu domain.Menu) (domain.Menu, 
 		existingMenu.Id,
 	)
 	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to update menu")
-		return domain.Menu{}, utils.NewInternalError("Failed to update menu")
+		return domain.Menu{}, err
+		// logger.Log.WithError(err).Error("Error failed to update menu")
+		// return domain.Menu{}, utils.NewInternalError("Failed to update menu")
 	}
 
 	return r.Get(tx, existingMenu.Id.String())
@@ -108,8 +105,9 @@ func (r *MenuRepositoryImpl) Update(tx *sql.Tx, menu domain.Menu) (domain.Menu, 
 func (r *MenuRepositoryImpl) Delete(tx *sql.Tx, id string) error {
 	_, err := tx.Exec("UPDATE menu SET deleted = ?, deleted_at = ? WHERE id = ?", true, time.Now(), id)
 	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to delete menu")
-		return utils.NewInternalError("Failed to delete menu")
+		return err
+		// logger.Log.WithError(err).Error("Error failed to delete menu")
+		// return utils.NewInternalError("Failed to delete menu")
 	}
 
 	return nil
@@ -118,8 +116,9 @@ func (r *MenuRepositoryImpl) Delete(tx *sql.Tx, id string) error {
 func (r *MenuRepositoryImpl) Restore(tx *sql.Tx, id string) (domain.Menu, error) {
 	_, err := tx.Exec("UPDATE menu SET deleted = ?, deleted_at = ? WHERE id = ?", false, nil, id)
 	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to restore menu")
-		return domain.Menu{}, utils.NewInternalError("Failed to restore menu")
+		return domain.Menu{}, err
+		// logger.Log.WithError(err).Error("Error failed to restore menu")
+		// return domain.Menu{}, utils.NewInternalError("Failed to restore menu")
 	}
 	menu, _ := r.Get(tx, id)
 	return menu, nil
@@ -129,8 +128,15 @@ func (r *MenuRepositoryImpl) GetDeletedMenuById(tx *sql.Tx, id string) (domain.M
 	menus := domain.Menu{}
 	err := tx.QueryRow("SELECT id,name,description,price,category,image_url,rating,created_at,updated_at FROM menu WHERE deleted = true AND deleted_at IS NOT NULL AND id = ?", id).Scan(&menus)
 	if err != nil {
-		logger.Log.WithError(err).Error("Error menu not found to restore")
-		return domain.Menu{}, utils.NewNotFoundError("Menu not found to restore")
+		return domain.Menu{}, err
 	}
 	return menus, nil
+}
+
+func (r *MenuRepositoryImpl) UpdateRating(tx *sql.Tx, id string, rating float64) error {
+	_, err := tx.Exec("UPDATE menu SET rating = ? WHERE id = ?", rating, id)
+	if err != nil {
+		return err
+	}
+	return nil
 }

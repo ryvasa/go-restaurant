@@ -51,7 +51,7 @@ func (h *MenuHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 		Category:    r.FormValue("category"),
 	}
 
-	price, err := strconv.Atoi(r.FormValue("price"))
+	price, err := strconv.ParseFloat(r.FormValue("price"), 64)
 	if err != nil {
 		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid price format"))
 		return
@@ -113,7 +113,7 @@ func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse price
-	price, err := strconv.Atoi(r.FormValue("price"))
+	price, err := strconv.ParseFloat(r.FormValue("price"), 64)
 	if err != nil {
 		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid price format"))
 		return
