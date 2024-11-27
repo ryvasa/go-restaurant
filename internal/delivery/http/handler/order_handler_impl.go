@@ -25,7 +25,6 @@ func NewOrderHandler(orderUsecase usecase.OrderUsecase) *OrderHandlerImpl {
 func (h *OrderHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// disini errornya
 	claims, ok := ctx.Value("user").(jwt.MapClaims)
 	if !ok {
 		logger.Log.Error("Error getting user claims from context")
@@ -62,6 +61,42 @@ func (h *OrderHandlerImpl) GetOneById(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
 	order, err := h.orderUsecase.GetOneById(ctx, id)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error failed to get order")
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
+		return
+	}
+
+	utils.HttpResponse(w, http.StatusOK, order, nil)
+}
+
+func (h *OrderHandlerImpl) UpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	id := mux.Vars(r)["id"]
+	var req dto.UpdateOrderStatusDto
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		logger.Log.WithError(err).Error("Error invalid request body")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid request body"))
+	}
+	order, err := h.orderUsecase.UpdateOrderStatus(ctx, id, req)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error failed to get order")
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
+		return
+	}
+
+	utils.HttpResponse(w, http.StatusOK, order, nil)
+}
+
+func (h *OrderHandlerImpl) UpdatePayment(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	id := mux.Vars(r)["id"]
+	var req dto.UpdatePaymentDto
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		logger.Log.WithError(err).Error("Error invalid request body")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid request body"))
+	}
+	order, err := h.orderUsecase.UpdatePayment(ctx, id, req)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to get order")
 		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)

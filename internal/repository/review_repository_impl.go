@@ -23,7 +23,7 @@ func (r *ReviewRepositoryImpl) GetAllByMenuId(tx *sql.Tx, menuId string) ([]doma
 	defer rows.Close()
 	for rows.Next() {
 		var review domain.Review
-		err := rows.Scan(&review.Id, &review.Comment, &review.Rating, &review.UserId, &review.MenuId, &review.OrderId, &review.UpdatedAt, &review.CreatedAt)
+		err := rows.Scan(&review.Id, &review.Rating, &review.Comment, &review.UserId, &review.MenuId, &review.OrderId, &review.UpdatedAt, &review.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -53,7 +53,17 @@ func (r *ReviewRepositoryImpl) GetOneById(tx *sql.Tx, id string) (domain.Review,
 }
 
 func (r *ReviewRepositoryImpl) Update(tx *sql.Tx, review domain.Review) (domain.Review, error) {
-	_, err := tx.Exec("UPDATE review SET rating = ?, comment = ?, updated_at = ? WHERE id = ?", review.Rating, review.Comment, review.UpdatedAt, review.Id)
+	exsistingReview, err := r.GetOneById(tx, review.Id.String())
+	if err != nil {
+		return domain.Review{}, err
+	}
+	if review.Rating != 0 {
+		exsistingReview.Rating = review.Rating
+	}
+	if review.Comment != "" {
+		exsistingReview.Comment = review.Comment
+	}
+	_, err = tx.Exec("UPDATE review SET rating = ?, comment = ? WHERE id = ?", exsistingReview.Rating, exsistingReview.Comment, review.Id)
 	if err != nil {
 		return domain.Review{}, err
 	}

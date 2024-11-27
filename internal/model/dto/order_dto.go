@@ -8,3 +8,11 @@ type OrderMenuDto struct {
 type CreateOrderDto struct {
 	Menu []OrderMenuDto `json:"menu" validate:"required"`
 }
+
+type UpdateOrderStatusDto struct {
+	Status string `json:"status,omitempty" validate:"omitempty,oneof=pending processing success cancel"`
+}
+
+type UpdatePaymentDto struct {
+	PaymentMethod *string `json:"payment_method" validate:"required"`
+}

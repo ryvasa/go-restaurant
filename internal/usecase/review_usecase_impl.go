@@ -112,8 +112,6 @@ func (u *ReviewUsecaseImpl) Create(ctx context.Context, req dto.CreateReviewRequ
 
 	count, rating, err := u.reviewRepo.CountReviewByMenuId(tx, req.MenuId)
 	avgRating := rating / float64(count)
-	log.Println(rating / float64(count))
-	log.Println(count, rating, avgRating)
 	err = u.menuRepo.UpdateRating(tx, req.MenuId, avgRating)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to update rating")
@@ -153,7 +151,7 @@ func (u *ReviewUsecaseImpl) GetOneById(ctx context.Context, id string) (domain.R
 	return review, err
 }
 
-func (u *ReviewUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateReviewRequest) (domain.Review, error) {
+func (u *ReviewUsecaseImpl) Update(ctx context.Context, id, userId string, req dto.UpdateReviewRequest) (domain.Review, error) {
 	tx, err := u.db.BeginTx(ctx, nil)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error begin transaction")
@@ -172,10 +170,20 @@ func (u *ReviewUsecaseImpl) Update(ctx context.Context, id string, req dto.Updat
 		return domain.Review{}, utils.NewValidationError("Invalid id format")
 	}
 
-	_, err = u.reviewRepo.GetOneById(tx, id)
+	existingReview, err := u.reviewRepo.GetOneById(tx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error review not found")
 		return domain.Review{}, utils.NewNotFoundError("Review not found")
+	}
+	authId, err := uuid.Parse(userId)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid user id format")
+		return domain.Review{}, utils.NewValidationError("Invalid user id format")
+	}
+
+	if existingReview.UserId != authId {
+		logger.Log.WithField("user_id", authId).WithField("review.user_id", existingReview.UserId).Error("You cannot update a review")
+		return domain.Review{}, utils.NewUnauthorizedError("You cannot update a review")
 	}
 
 	review := domain.Review{
@@ -187,6 +195,20 @@ func (u *ReviewUsecaseImpl) Update(ctx context.Context, id string, req dto.Updat
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to update review")
 		return domain.Review{}, utils.NewInternalError("Failed to update review")
+	}
+	menu, err := u.menuRepo.Get(tx, existingReview.MenuId.String())
+	if err != nil {
+		logger.Log.WithError(err).Error("Error menu not found")
+		return domain.Review{}, utils.NewNotFoundError("menu not found")
+	}
+
+	count, rating, err := u.reviewRepo.CountReviewByMenuId(tx, menu.Id.String())
+	avgRating := rating / float64(count)
+	log.Println(count, rating, avgRating)
+	err = u.menuRepo.UpdateRating(tx, menu.Id.String(), avgRating)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error failed to update rating")
+		return domain.Review{}, utils.NewInternalError("Failed to update rating")
 	}
 
 	if err = tx.Commit(); err != nil {

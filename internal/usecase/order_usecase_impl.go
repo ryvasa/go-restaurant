@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -130,4 +131,111 @@ func (u *OrderUsecaseImpl) GetOneById(ctx context.Context, id string) (domain.Or
 		return domain.Order{}, utils.NewInternalError("Failed to commit transaction")
 	}
 	return order, nil
+}
+
+func (u *OrderUsecaseImpl) UpdateOrderStatus(ctx context.Context, id string, req dto.UpdateOrderStatusDto) (domain.Order, error) {
+	tx, err := u.db.BeginTx(ctx, nil)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error begin transaction")
+		return domain.Order{}, utils.NewInternalError("Failed to begin transaction")
+	}
+	defer func() {
+		if err != nil {
+			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
+			tx.Rollback()
+		}
+	}()
+
+	existingOrder, err := u.orderRepo.GetOneById(tx, id)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error order not found")
+		return domain.Order{}, utils.NewNotFoundError("Order not found")
+	}
+
+	if req.Status == "" {
+		if existingOrder.Status == "pending" {
+			req.Status = "processing"
+		} else if existingOrder.Status == "processing" {
+			logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
+			return domain.Order{}, utils.NewBadRequestError("Invalid status, must include success or cancel")
+		} else {
+			logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
+			return domain.Order{}, utils.NewBadRequestError(fmt.Sprintf("Invalid update status, status already '%s'", existingOrder.Status))
+		}
+	}
+	order := domain.Order{
+		Status: req.Status,
+	}
+	updatedOrder, err := u.orderRepo.UpdateOrderStatus(tx, id, order)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error failed to update order status")
+		return domain.Order{}, utils.NewInternalError("Failed to update order status")
+	}
+
+	if err = tx.Commit(); err != nil {
+		logger.Log.WithError(err).Error("Error failed to commit transaction")
+		return domain.Order{}, utils.NewInternalError("Failed to commit transaction")
+	}
+	return updatedOrder, nil
+}
+
+func (u *OrderUsecaseImpl) UpdatePayment(ctx context.Context, id string, req dto.UpdatePaymentDto) (domain.Order, error) {
+	tx, err := u.db.BeginTx(ctx, nil)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error begin transaction")
+		return domain.Order{}, utils.NewInternalError("Failed to begin transaction")
+	}
+	defer func() {
+		if err != nil {
+			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
+			tx.Rollback()
+		}
+	}()
+
+	if err := utils.ValidateStruct(req); len(err) > 0 {
+		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
+		return domain.Order{}, utils.NewValidationError(err)
+	}
+
+	_, err = u.orderRepo.GetOneById(tx, id)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error order not found")
+		return domain.Order{}, utils.NewNotFoundError("Order not found")
+	}
+	var paymentStatus string
+	if req.PaymentMethod == nil {
+		paymentStatus = "unpaid"
+	} else {
+		paymentStatus = "paid"
+	}
+
+	order := domain.Order{
+		PaymentMethod: req.PaymentMethod,
+		PaymentStatus: paymentStatus,
+	}
+
+	updatedOrder, err := u.orderRepo.UpdatePayment(tx, id, order)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error failed to update order payment")
+		return domain.Order{}, utils.NewInternalError("Failed to update order payment")
+	}
+
+	if updatedOrder.PaymentStatus == "paid" {
+
+		status := domain.Order{
+			Status: "success",
+		}
+		updatedOrder, err = u.orderRepo.UpdateOrderStatus(tx, id, status)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to update order status")
+			return domain.Order{}, utils.NewInternalError("Failed to update order status")
+		}
+	}
+	updatedOrder.PaymentStatus = paymentStatus
+
+	if err = tx.Commit(); err != nil {
+		logger.Log.WithError(err).Error("Error failed to commit transaction")
+		return domain.Order{}, utils.NewInternalError("Failed to commit transaction")
+	}
+	return updatedOrder, nil
 }

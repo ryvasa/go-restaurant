@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"log"
 
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
 )
@@ -50,4 +51,25 @@ func (r *OrderRepositoryImpl) GetOneById(tx *sql.Tx, id string) (domain.Order, e
 	}
 
 	return order, nil
+}
+
+func (r *OrderRepositoryImpl) UpdateOrderStatus(tx *sql.Tx, id string, order domain.Order) (domain.Order, error) {
+	_, err := tx.Exec(
+		"UPDATE orders SET status = ? WHERE id = ? AND deleted = false AND deleted_at IS NULL",
+		order.Status, id)
+	if err != nil {
+		return domain.Order{}, err
+	}
+	return r.GetOneById(tx, id)
+}
+
+func (r *OrderRepositoryImpl) UpdatePayment(tx *sql.Tx, id string, order domain.Order) (domain.Order, error) {
+	log.Println(id)
+	_, err := tx.Exec(
+		"UPDATE orders SET payment_status = ?, payment_method = ? WHERE id = ? AND deleted = false AND deleted_at IS NULL",
+		order.PaymentStatus, order.PaymentMethod, id)
+	if err != nil {
+		return domain.Order{}, err
+	}
+	return r.GetOneById(tx, id)
 }
