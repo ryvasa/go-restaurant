@@ -45,7 +45,13 @@ func InitializeHandlers() (*handler.Handlers, error) {
 	orderMenuRepository := repository.NewOrderMenuRepository()
 	orderUsecase := usecase.NewOrderUsecase(db, orderRepository, menuRepository, userRepository, orderMenuRepository)
 	orderHandlerImpl := handler.NewOrderHandler(orderUsecase)
-	handlers := handler.NewHandlers(menuHandlerImpl, userHandlerImpl, reviewHandlerImpl, authHandlerImpl, orderHandlerImpl)
+	tableRepository := repository.NewTableRepository()
+	tableUsecase := usecase.NewTableUsecase(db, tableRepository)
+	tableHandlerImpl := handler.NewTableHandler(tableUsecase)
+	reservationRepository := repository.NewReservationRepository()
+	reservationUsecase := usecase.NewReservationUsecase(db, reservationRepository, tableRepository)
+	reservationHandlerImpl := handler.NewReservationHandler(reservationUsecase)
+	handlers := handler.NewHandlers(menuHandlerImpl, userHandlerImpl, reviewHandlerImpl, authHandlerImpl, orderHandlerImpl, tableHandlerImpl, reservationHandlerImpl)
 	return handlers, nil
 }
 
@@ -62,5 +68,9 @@ var reviewSet = wire.NewSet(repository.NewReviewRepository, usecase.NewReviewUse
 var authSet = wire.NewSet(usecase.NewAuthUsecase, handler.NewAuthHandler)
 
 var userSet = wire.NewSet(repository.NewUserRepository, usecase.NewUserUsecase, handler.NewUserHandler)
+
+var tableSet = wire.NewSet(repository.NewTableRepository, usecase.NewTableUsecase, handler.NewTableHandler)
+
+var reservationSet = wire.NewSet(repository.NewReservationRepository, usecase.NewReservationUsecase, handler.NewReservationHandler)
 
 var utilSet = wire.NewSet(utils.NewTokenUtil)

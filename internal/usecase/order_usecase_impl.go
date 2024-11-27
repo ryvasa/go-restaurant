@@ -157,7 +157,7 @@ func (u *OrderUsecaseImpl) UpdateOrderStatus(ctx context.Context, id string, req
 			req.Status = "processing"
 		} else if existingOrder.Status == "processing" {
 			logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
-			return domain.Order{}, utils.NewBadRequestError("Invalid status, must include success or cancel")
+			return domain.Order{}, utils.NewBadRequestError("Invalid status, must include success or failed")
 		} else {
 			logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
 			return domain.Order{}, utils.NewBadRequestError(fmt.Sprintf("Invalid update status, status already '%s'", existingOrder.Status))

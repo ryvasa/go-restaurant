@@ -53,8 +53,11 @@ func (h *UserHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 
 	var req dto.CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		// logger.Log.WithError(err).Error("Error invalid request body")
+		// utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid request body"))
+		// return
 		logger.Log.WithError(err).Error("Error invalid request body")
-		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid request body"))
+		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
 

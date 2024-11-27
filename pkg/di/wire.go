@@ -46,6 +46,18 @@ var userSet = wire.NewSet(
 	handler.NewUserHandler,
 )
 
+var tableSet = wire.NewSet(
+	repository.NewTableRepository,
+	usecase.NewTableUsecase,
+	handler.NewTableHandler,
+)
+
+var reservationSet = wire.NewSet(
+	repository.NewReservationRepository,
+	usecase.NewReservationUsecase,
+	handler.NewReservationHandler,
+)
+
 var utilSet = wire.NewSet(
 	utils.NewTokenUtil,
 )
@@ -63,6 +75,8 @@ func InitializeHandlers() (*handler.Handlers, error) {
 		authSet,
 		orderSet,
 		orderMenuSet,
+		tableSet,
+		reservationSet,
 		handler.NewHandlers,
 	)
 	return &handler.Handlers{}, nil

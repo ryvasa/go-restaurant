@@ -95,8 +95,6 @@ func (r *MenuRepositoryImpl) Update(tx *sql.Tx, menu domain.Menu) (domain.Menu, 
 	)
 	if err != nil {
 		return domain.Menu{}, err
-		// logger.Log.WithError(err).Error("Error failed to update menu")
-		// return domain.Menu{}, utils.NewInternalError("Failed to update menu")
 	}
 
 	return r.Get(tx, existingMenu.Id.String())
