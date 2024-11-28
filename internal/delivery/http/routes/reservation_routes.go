@@ -12,6 +12,8 @@ func ReservationRoutes(public, protected *mux.Router, handler handler.Reservatio
 	// all role
 	protected.HandleFunc("/reservations", handler.Create).Methods("POST")
 	protected.HandleFunc("/reservations/{id}", handler.Update).Methods("PATCH")
+
+	// admin and staff
 	protected.HandleFunc("/reservations/{id}", handler.Delete).Methods("DELETE")
 	protected.HandleFunc("/reservations/{id}/restore", handler.Restore).Methods("PATCH")
 }

@@ -2,9 +2,11 @@ package repository
 
 import (
 	"database/sql"
+	"log"
 	"time"
 
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
+	"github.com/ryvasa/go-restaurant/pkg/logger"
 )
 
 type ReservationRepositoryImpl struct {
@@ -51,18 +53,20 @@ func (r *ReservationRepositoryImpl) GetOneByTableId(tx *sql.Tx, id string) (doma
 	return reservation, nil
 }
 
-func (r *ReservationRepositoryImpl) Create(tx *sql.Tx, table domain.Reservation) error {
+func (r *ReservationRepositoryImpl) Create(tx *sql.Tx, reservation domain.Reservation) error {
+	log.Println(reservation)
 	_, err := tx.Exec("INSERT INTO reservations (id,table_id,user_id,reservation_date,reservation_time,number_of_guests) VALUES (?, ?, ?, ?, ?, ?)",
-		table.Id, table.TableId, table.UserId, table.ReservationDate, table.ReservationTime, table.NumberOfGuests)
+		reservation.Id, reservation.TableId, reservation.UserId, reservation.ReservationDate, reservation.ReservationTime, reservation.NumberOfGuests)
 	if err != nil {
+		logger.Log.WithError(err)
 		return err
 	}
 	return nil
 }
 
-func (r *ReservationRepositoryImpl) Update(tx *sql.Tx, table domain.Reservation) error {
-	_, err := tx.Exec("UPDATE reservations SET table_id = ?, , reservation_date = ?, reservation_time = ?, status = ?, number_of_guests = ? WHERE id = ?",
-		table.TableId, table.ReservationDate, table.ReservationTime, table.Status, table.NumberOfGuests, table.Id)
+func (r *ReservationRepositoryImpl) Update(tx *sql.Tx, id string, reservation domain.Reservation) error {
+	_, err := tx.Exec("UPDATE reservations SET reservation_date = ?, reservation_time = ?, status = ?, number_of_guests = ? WHERE id = ?",
+		reservation.ReservationDate, reservation.ReservationTime, reservation.Status, reservation.NumberOfGuests, id)
 	if err != nil {
 		return err
 	}

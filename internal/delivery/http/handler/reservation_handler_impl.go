@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
@@ -49,6 +50,21 @@ func (h *ReservationHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 
 func (h *ReservationHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	claims, ok := ctx.Value("user").(jwt.MapClaims)
+	if !ok {
+		logger.Log.Error("Error getting user claims from context")
+		utils.HttpResponse(w, http.StatusUnauthorized, nil,
+			utils.NewUnauthorizedError("Invalid user context"))
+		return
+	}
+
+	userId, ok := claims["sub"].(string)
+	if !ok {
+		logger.Log.Error("Error getting user ID from claims")
+		utils.HttpResponse(w, http.StatusUnauthorized, nil,
+			utils.NewUnauthorizedError("Invalid user ID"))
+		return
+	}
 
 	var req dto.CreateReservationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -56,6 +72,8 @@ func (h *ReservationHandlerImpl) Create(w http.ResponseWriter, r *http.Request) 
 		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
 		return
 	}
+
+	req.UserId = userId
 
 	createdReservation, err := h.reservationUsecase.Create(ctx, req)
 	if err != nil {
@@ -82,6 +100,7 @@ func (h *ReservationHandlerImpl) Update(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to update reservation")
 		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
+		return
 	}
 
 	utils.HttpResponse(w, http.StatusOK, updatedReservation, nil)
