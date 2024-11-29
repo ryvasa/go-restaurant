@@ -1,23 +1,25 @@
 package repository
 
 import (
-	"database/sql"
+	"context"
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
 )
 
 type TableRepositoryImpl struct {
+	db DB
 }
 
-func NewTableRepository() TableRepository {
-	return &TableRepositoryImpl{}
+func NewTableRepository(db DB) TableRepository {
+	return &TableRepositoryImpl{db}
 }
 
-func (r *TableRepositoryImpl) GetAll(tx *sql.Tx) ([]domain.Table, error) {
+func (r *TableRepositoryImpl) GetAll(ctx context.Context) ([]domain.Table, error) {
 	tables := []domain.Table{}
-	rows, err := tx.Query("SELECT id,number,capacity,location,status,created_at,updated_at FROM tables WHERE deleted = false AND deleted_at IS NULL")
+	rows, err := r.db.QueryContext(ctx, "SELECT id,number,capacity,location,status,created_at,updated_at FROM tables WHERE deleted = false AND deleted_at IS NULL")
 	if err != nil {
 		return nil, err
 	}
@@ -34,17 +36,17 @@ func (r *TableRepositoryImpl) GetAll(tx *sql.Tx) ([]domain.Table, error) {
 	return tables, nil
 }
 
-func (r *TableRepositoryImpl) GetOneById(tx *sql.Tx, id string) (domain.Table, error) {
+func (r *TableRepositoryImpl) GetOneById(ctx context.Context, id uuid.UUID) (domain.Table, error) {
 	table := domain.Table{}
-	err := tx.QueryRow("SELECT id,number,capacity,location,status,created_at,updated_at FROM tables WHERE id = ? AND deleted = false AND deleted_at IS NULL", id).Scan(&table.Id, &table.Number, &table.Capacity, &table.Location, &table.Status, &table.CreatedAt, &table.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, "SELECT id,number,capacity,location,status,created_at,updated_at FROM tables WHERE id = ? AND deleted = false AND deleted_at IS NULL", id).Scan(&table.Id, &table.Number, &table.Capacity, &table.Location, &table.Status, &table.CreatedAt, &table.UpdatedAt)
 	if err != nil {
 		return domain.Table{}, err
 	}
 	return table, nil
 }
 
-func (r *TableRepositoryImpl) Create(tx *sql.Tx, table domain.Table) error {
-	_, err := tx.Exec("INSERT INTO tables (id,number,capacity,location) VALUES (?, ?, ?, ?)",
+func (r *TableRepositoryImpl) Create(ctx context.Context, table domain.Table) error {
+	_, err := r.db.ExecContext(ctx, "INSERT INTO tables (id,number,capacity,location) VALUES (?, ?, ?, ?)",
 		table.Id, table.Number, table.Capacity, table.Location)
 	if err != nil {
 		return err
@@ -52,9 +54,9 @@ func (r *TableRepositoryImpl) Create(tx *sql.Tx, table domain.Table) error {
 	return nil
 }
 
-func (r *TableRepositoryImpl) Update(tx *sql.Tx, id string, table domain.Table) error {
+func (r *TableRepositoryImpl) Update(ctx context.Context, id uuid.UUID, table domain.Table) error {
 	log.Println(table)
-	result, err := tx.Exec("UPDATE tables SET number = ?, capacity = ?, location = ?, status = ? WHERE id = ?",
+	result, err := r.db.ExecContext(ctx, "UPDATE tables SET number = ?, capacity = ?, location = ?, status = ? WHERE id = ?",
 		table.Number, table.Capacity, table.Location, table.Status, id)
 	if err != nil {
 		return err
@@ -65,25 +67,25 @@ func (r *TableRepositoryImpl) Update(tx *sql.Tx, id string, table domain.Table) 
 	return nil
 }
 
-func (r *TableRepositoryImpl) Delete(tx *sql.Tx, id string) error {
-	_, err := tx.Exec("UPDATE tables SET deleted = ?, deleted_at = ? WHERE id = ?", true, time.Now(), id)
+func (r *TableRepositoryImpl) Delete(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, "UPDATE tables SET deleted = ?, deleted_at = ? WHERE id = ?", true, time.Now(), id)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *TableRepositoryImpl) GetDeleted(tx *sql.Tx, id string) (domain.Table, error) {
+func (r *TableRepositoryImpl) GetDeleted(ctx context.Context, id uuid.UUID) (domain.Table, error) {
 	table := domain.Table{}
-	err := tx.QueryRow("SELECT id,number,capacity,location,status,created_at,updated_at FROM tables WHERE deleted = true AND deleted_at IS NOT NULL AND id = ?", id).Scan(&table.Id, &table.Number, &table.Capacity, &table.Location, &table.Status, &table.CreatedAt, &table.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, "SELECT id,number,capacity,location,status,created_at,updated_at FROM tables WHERE deleted = true AND deleted_at IS NOT NULL AND id = ?", id).Scan(&table.Id, &table.Number, &table.Capacity, &table.Location, &table.Status, &table.CreatedAt, &table.UpdatedAt)
 	if err != nil {
 		return domain.Table{}, err
 	}
 	return table, nil
 }
 
-func (r *TableRepositoryImpl) Restore(tx *sql.Tx, id string) error {
-	_, err := tx.Exec("UPDATE tables SET deleted = ?, deleted_at = ? WHERE id = ?", false, nil, id)
+func (r *TableRepositoryImpl) Restore(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, "UPDATE tables SET deleted = ?, deleted_at = ? WHERE id = ?", false, nil, id)
 	if err != nil {
 		return err
 	}

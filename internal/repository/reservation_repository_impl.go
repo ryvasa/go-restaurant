@@ -1,24 +1,25 @@
 package repository
 
 import (
-	"database/sql"
-	"log"
+	"context"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
 )
 
 type ReservationRepositoryImpl struct {
+	db DB
 }
 
-func NewReservationRepository() ReservationRepository {
-	return &ReservationRepositoryImpl{}
+func NewReservationRepository(db DB) ReservationRepository {
+	return &ReservationRepositoryImpl{db}
 }
 
-func (r *ReservationRepositoryImpl) GetAll(tx *sql.Tx) ([]domain.Reservation, error) {
+func (r *ReservationRepositoryImpl) GetAll(ctx context.Context) ([]domain.Reservation, error) {
 	reservations := []domain.Reservation{}
-	rows, err := tx.Query("SELECT id,table_id,user_id,reservation_date,reservation_time,number_of_guests,status,created_at,updated_at FROM reservations WHERE deleted = false AND deleted_at IS NULL")
+	rows, err := r.db.QueryContext(ctx, "SELECT id,table_id,user_id,reservation_date,reservation_time,number_of_guests,status,created_at,updated_at FROM reservations WHERE deleted = false AND deleted_at IS NULL")
 	if err != nil {
 		return nil, err
 	}
@@ -35,27 +36,27 @@ func (r *ReservationRepositoryImpl) GetAll(tx *sql.Tx) ([]domain.Reservation, er
 	return reservations, nil
 }
 
-func (r *ReservationRepositoryImpl) GetOneById(tx *sql.Tx, id string) (domain.Reservation, error) {
+func (r *ReservationRepositoryImpl) GetOneById(ctx context.Context, id uuid.UUID) (domain.Reservation, error) {
+
 	reservation := domain.Reservation{}
-	err := tx.QueryRow("SELECT id,table_id,user_id,reservation_date,reservation_time,number_of_guests,status,created_at,updated_at FROM reservations WHERE id = ? AND deleted = false AND deleted_at IS NULL", id).Scan(&reservation.Id, &reservation.TableId, &reservation.UserId, &reservation.ReservationDate, &reservation.ReservationTime, &reservation.NumberOfGuests, &reservation.Status, &reservation.CreatedAt, &reservation.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, "SELECT id,table_id,user_id,reservation_date,reservation_time,number_of_guests,status,created_at,updated_at FROM reservations WHERE id = ? AND deleted = false AND deleted_at IS NULL", id).Scan(&reservation.Id, &reservation.TableId, &reservation.UserId, &reservation.ReservationDate, &reservation.ReservationTime, &reservation.NumberOfGuests, &reservation.Status, &reservation.CreatedAt, &reservation.UpdatedAt)
 	if err != nil {
 		return domain.Reservation{}, err
 	}
 	return reservation, nil
 }
 
-func (r *ReservationRepositoryImpl) GetOneByTableId(tx *sql.Tx, id string) (domain.Reservation, error) {
+func (r *ReservationRepositoryImpl) GetOneByTableId(ctx context.Context, id uuid.UUID) (domain.Reservation, error) {
 	reservation := domain.Reservation{}
-	err := tx.QueryRow("SELECT id,table_id,user_id,reservation_date,reservation_time,number_of_guests,status,created_at,updated_at FROM reservations WHERE table_id = ? AND deleted = false AND deleted_at IS NULL", id).Scan(&reservation.Id, &reservation.TableId, &reservation.UserId, &reservation.ReservationDate, &reservation.ReservationTime, &reservation.NumberOfGuests, &reservation.Status, &reservation.CreatedAt, &reservation.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, "SELECT id,table_id,user_id,reservation_date,reservation_time,number_of_guests,status,created_at,updated_at FROM reservations WHERE table_id = ? AND deleted = false AND deleted_at IS NULL", id).Scan(&reservation.Id, &reservation.TableId, &reservation.UserId, &reservation.ReservationDate, &reservation.ReservationTime, &reservation.NumberOfGuests, &reservation.Status, &reservation.CreatedAt, &reservation.UpdatedAt)
 	if err != nil {
 		return domain.Reservation{}, err
 	}
 	return reservation, nil
 }
 
-func (r *ReservationRepositoryImpl) Create(tx *sql.Tx, reservation domain.Reservation) error {
-	log.Println(reservation)
-	_, err := tx.Exec("INSERT INTO reservations (id,table_id,user_id,reservation_date,reservation_time,number_of_guests) VALUES (?, ?, ?, ?, ?, ?)",
+func (r *ReservationRepositoryImpl) Create(ctx context.Context, reservation domain.Reservation) error {
+	_, err := r.db.ExecContext(ctx, "INSERT INTO reservations (id,table_id,user_id,reservation_date,reservation_time,number_of_guests) VALUES (?, ?, ?, ?, ?, ?)",
 		reservation.Id, reservation.TableId, reservation.UserId, reservation.ReservationDate, reservation.ReservationTime, reservation.NumberOfGuests)
 	if err != nil {
 		logger.Log.WithError(err)
@@ -64,8 +65,8 @@ func (r *ReservationRepositoryImpl) Create(tx *sql.Tx, reservation domain.Reserv
 	return nil
 }
 
-func (r *ReservationRepositoryImpl) Update(tx *sql.Tx, id string, reservation domain.Reservation) error {
-	_, err := tx.Exec("UPDATE reservations SET reservation_date = ?, reservation_time = ?, status = ?, number_of_guests = ? WHERE id = ?",
+func (r *ReservationRepositoryImpl) Update(ctx context.Context, id uuid.UUID, reservation domain.Reservation) error {
+	_, err := r.db.ExecContext(ctx, "UPDATE reservations SET reservation_date = ?, reservation_time = ?, status = ?, number_of_guests = ? WHERE id = ?",
 		reservation.ReservationDate, reservation.ReservationTime, reservation.Status, reservation.NumberOfGuests, id)
 	if err != nil {
 		return err
@@ -73,25 +74,25 @@ func (r *ReservationRepositoryImpl) Update(tx *sql.Tx, id string, reservation do
 	return nil
 }
 
-func (r *ReservationRepositoryImpl) Delete(tx *sql.Tx, id string) error {
-	_, err := tx.Exec("UPDATE reservations SET deleted = true, deleted_at = ? WHERE id = ?", time.Now(), id)
+func (r *ReservationRepositoryImpl) Delete(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, "UPDATE reservations SET deleted = true, deleted_at = ? WHERE id = ?", time.Now(), id)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *ReservationRepositoryImpl) GetDeleted(tx *sql.Tx, id string) (domain.Reservation, error) {
+func (r *ReservationRepositoryImpl) GetDeleted(ctx context.Context, id uuid.UUID) (domain.Reservation, error) {
 	reservation := domain.Reservation{}
-	err := tx.QueryRow("SELECT id,table_id,user_id,reservation_date,reservation_time,number_of_guests,status,created_at,updated_at FROM reservations WHERE id = ? AND deleted = true AND deleted_at IS NOT NULL", id).Scan(&reservation.Id, &reservation.TableId, &reservation.UserId, &reservation.ReservationDate, &reservation.ReservationTime, &reservation.NumberOfGuests, &reservation.Status, &reservation.CreatedAt, &reservation.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, "SELECT id,table_id,user_id,reservation_date,reservation_time,number_of_guests,status,created_at,updated_at FROM reservations WHERE id = ? AND deleted = true AND deleted_at IS NOT NULL", id).Scan(&reservation.Id, &reservation.TableId, &reservation.UserId, &reservation.ReservationDate, &reservation.ReservationTime, &reservation.NumberOfGuests, &reservation.Status, &reservation.CreatedAt, &reservation.UpdatedAt)
 	if err != nil {
 		return domain.Reservation{}, err
 	}
 	return reservation, nil
 }
 
-func (r *ReservationRepositoryImpl) Restore(tx *sql.Tx, id string) error {
-	_, err := tx.Exec("UPDATE reservations SET deleted = ?, deleted_at = ? WHERE id = ?", false, nil, id)
+func (r *ReservationRepositoryImpl) Restore(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, "UPDATE reservations SET deleted = ?, deleted_at = ? WHERE id = ?", false, nil, id)
 	if err != nil {
 		return err
 	}

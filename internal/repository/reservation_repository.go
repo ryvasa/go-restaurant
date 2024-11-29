@@ -1,18 +1,19 @@
 package repository
 
 import (
-	"database/sql"
+	"context"
 
+	"github.com/google/uuid"
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
 )
 
 type ReservationRepository interface {
-	GetAll(tx *sql.Tx) ([]domain.Reservation, error)
-	GetOneById(tx *sql.Tx, id string) (domain.Reservation, error)
-	GetOneByTableId(tx *sql.Tx, tableId string) (domain.Reservation, error)
-	Create(tx *sql.Tx, reservation domain.Reservation) error
-	Update(tx *sql.Tx, id string, reservation domain.Reservation) error
-	Delete(tx *sql.Tx, id string) error
-	Restore(tx *sql.Tx, id string) error
-	GetDeleted(tx *sql.Tx, id string) (domain.Reservation, error)
+	GetAll(ctx context.Context) ([]domain.Reservation, error)
+	GetOneById(ctx context.Context, id uuid.UUID) (domain.Reservation, error)
+	GetOneByTableId(ctx context.Context, tableId uuid.UUID) (domain.Reservation, error)
+	Create(ctx context.Context, reservation domain.Reservation) error
+	Update(ctx context.Context, id uuid.UUID, reservation domain.Reservation) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	Restore(ctx context.Context, id uuid.UUID) error
+	GetDeleted(ctx context.Context, id uuid.UUID) (domain.Reservation, error)
 }

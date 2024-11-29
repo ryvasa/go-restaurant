@@ -7,6 +7,7 @@
 package di
 
 import (
+	"database/sql"
 	"github.com/google/wire"
 	"github.com/ryvasa/go-restaurant/internal/delivery/http/handler"
 	"github.com/ryvasa/go-restaurant/internal/repository"
@@ -45,11 +46,13 @@ func InitializeHandlers() (*handler.Handlers, error) {
 	orderMenuRepository := repository.NewOrderMenuRepository()
 	orderUsecase := usecase.NewOrderUsecase(db, orderRepository, menuRepository, userRepository, orderMenuRepository)
 	orderHandlerImpl := handler.NewOrderHandler(orderUsecase)
-	tableRepository := repository.NewTableRepository()
-	tableUsecase := usecase.NewTableUsecase(db, tableRepository)
+	repositoryDB := ProvideDBConnection(db)
+	tableRepository := repository.NewTableRepository(repositoryDB)
+	transactionRepository := repository.NewTransactionRepository(db)
+	tableUsecase := usecase.NewTableUsecase(db, tableRepository, transactionRepository)
 	tableHandlerImpl := handler.NewTableHandler(tableUsecase)
-	reservationRepository := repository.NewReservationRepository()
-	reservationUsecase := usecase.NewReservationUsecase(db, reservationRepository, tableRepository)
+	reservationRepository := repository.NewReservationRepository(repositoryDB)
+	reservationUsecase := usecase.NewReservationUsecase(reservationRepository, tableRepository, transactionRepository)
 	reservationHandlerImpl := handler.NewReservationHandler(reservationUsecase)
 	handlers := handler.NewHandlers(menuHandlerImpl, userHandlerImpl, reviewHandlerImpl, authHandlerImpl, orderHandlerImpl, tableHandlerImpl, reservationHandlerImpl)
 	return handlers, nil
@@ -69,8 +72,14 @@ var authSet = wire.NewSet(usecase.NewAuthUsecase, handler.NewAuthHandler)
 
 var userSet = wire.NewSet(repository.NewUserRepository, usecase.NewUserUsecase, handler.NewUserHandler)
 
+func ProvideDBConnection(db *sql.DB) repository.DB {
+	return db
+}
+
 var tableSet = wire.NewSet(repository.NewTableRepository, usecase.NewTableUsecase, handler.NewTableHandler)
 
 var reservationSet = wire.NewSet(repository.NewReservationRepository, usecase.NewReservationUsecase, handler.NewReservationHandler)
+
+var txSet = wire.NewSet(repository.NewTransactionRepository)
 
 var utilSet = wire.NewSet(utils.NewTokenUtil)

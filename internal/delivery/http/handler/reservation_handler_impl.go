@@ -2,9 +2,11 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
@@ -37,7 +39,15 @@ func (h *ReservationHandlerImpl) GetAll(w http.ResponseWriter, r *http.Request) 
 func (h *ReservationHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	id := mux.Vars(r)["id"]
+	idStr := mux.Vars(r)["id"]
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
+		return
+	}
+
 	reservation, err := h.reservationUsecase.GetOneById(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to get reservation")
@@ -87,12 +97,19 @@ func (h *ReservationHandlerImpl) Create(w http.ResponseWriter, r *http.Request) 
 
 func (h *ReservationHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := mux.Vars(r)["id"]
-
 	var req dto.UpdateReservationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.WithError(err).Error("Error invalid request body")
 		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
+		return
+	}
+
+	idStr := mux.Vars(r)["id"]
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
 		return
 	}
 
@@ -108,9 +125,16 @@ func (h *ReservationHandlerImpl) Update(w http.ResponseWriter, r *http.Request) 
 
 func (h *ReservationHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := mux.Vars(r)["id"]
+	idStr := mux.Vars(r)["id"]
 
-	err := h.reservationUsecase.Delete(ctx, id)
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
+		return
+	}
+
+	err = h.reservationUsecase.Delete(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to delete reservation")
 		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
@@ -124,7 +148,14 @@ func (h *ReservationHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) 
 
 func (h *ReservationHandlerImpl) Restore(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := mux.Vars(r)["id"]
+	idStr := mux.Vars(r)["id"]
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
+		return
+	}
 
 	reservation, err := h.reservationUsecase.Restore(ctx, id)
 	if err != nil {
