@@ -2,8 +2,11 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
@@ -37,7 +40,14 @@ func (h *UserHandlerImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	id := mux.Vars(r)["id"]
+	idStr := mux.Vars(r)["id"]
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
+		return
+	}
 	user, err := h.userUsecase.Get(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to find user")
@@ -73,7 +83,37 @@ func (h *UserHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *UserHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := mux.Vars(r)["id"]
+	idStr := mux.Vars(r)["id"]
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
+		return
+	}
+
+	claims, ok := ctx.Value("user").(jwt.MapClaims)
+	if !ok {
+		logger.Log.Error("Error getting user claims from context")
+		utils.HttpResponse(w, http.StatusUnauthorized, nil,
+			utils.NewUnauthorizedError("Invalid user context"))
+		return
+	}
+
+	authIdStr, ok := claims["sub"].(string)
+	if !ok {
+		logger.Log.Error("Error getting user ID from claims")
+		utils.HttpResponse(w, http.StatusUnauthorized, nil,
+			utils.NewUnauthorizedError("Invalid user ID"))
+		return
+	}
+
+	authId, err := uuid.Parse(authIdStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
+		return
+	}
 
 	var req dto.UpdateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -82,7 +122,7 @@ func (h *UserHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedUser, err := h.userUsecase.Update(ctx, id, req)
+	updatedUser, err := h.userUsecase.Update(ctx, id, authId, req)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to update user")
 		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
@@ -94,9 +134,16 @@ func (h *UserHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *UserHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := mux.Vars(r)["id"]
+	idStr := mux.Vars(r)["id"]
 
-	err := h.userUsecase.Delete(ctx, id)
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
+		return
+	}
+
+	err = h.userUsecase.Delete(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to delete user")
 		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
@@ -109,7 +156,14 @@ func (h *UserHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 
 func (h *UserHandlerImpl) Restore(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := mux.Vars(r)["id"]
+	idStr := mux.Vars(r)["id"]
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
+		return
+	}
 
 	user, err := h.userUsecase.Restore(ctx, id)
 	if err != nil {

@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/google/uuid"
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
@@ -13,255 +12,214 @@ import (
 )
 
 type UserUsecaseImpl struct {
-	db       *sql.DB
 	userRepo repository.UserRepository
+	txRepo   repository.TransactionRepository
 }
 
-func NewUserUsecase(db *sql.DB, userRepo repository.UserRepository) UserUsecase {
-	return &UserUsecaseImpl{db, userRepo}
+func NewUserUsecase(userRepo repository.UserRepository, txRepo repository.TransactionRepository) UserUsecase {
+	return &UserUsecaseImpl{userRepo, txRepo}
 }
 
 func (u *UserUsecaseImpl) GetAll(ctx context.Context) ([]domain.User, error) {
-	tx, err := u.db.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error begin transaction")
-		return []domain.User{}, utils.NewInternalError("Failed to begin transaction")
-	}
-	defer func() {
-		if err != nil {
-			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
-			tx.Rollback()
-		}
-	}()
-	users, err := u.userRepo.GetAll(tx)
+	users, err := u.userRepo.GetAll(ctx)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to get all users")
 		return nil, utils.NewInternalError("Failed to get all users")
-	}
-
-	if err = tx.Commit(); err != nil {
-		logger.Log.WithError(err).Error("Error failed to commit transaction")
-		return []domain.User{}, utils.NewInternalError("Failed to commit transaction")
 	}
 	return users, nil
 }
 
 func (u *UserUsecaseImpl) Create(ctx context.Context, req dto.CreateUserRequest) (domain.User, error) {
-	tx, err := u.db.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error begin transaction")
-		return domain.User{}, utils.NewInternalError("Failed to begin transaction")
-	}
-	defer func() {
-		if err != nil {
-			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
-			tx.Rollback()
+	result := domain.User{}
+	err := u.txRepo.Transact(func(adapters repository.Adapters) error {
+		if err := utils.ValidateStruct(req); len(err) > 0 {
+			logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
+			return utils.NewValidationError(err)
 		}
-	}()
 
-	if err := utils.ValidateStruct(req); len(err) > 0 {
-		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
-		return domain.User{}, utils.NewValidationError(err)
-	}
+		user, err := adapters.UserRepository.GetByEmail(ctx, req.Email)
+		if user.Email == req.Email {
+			logger.Log.WithError(err).Error("Error email already exists")
+			return utils.NewConflictError("Email already exists")
+		}
 
-	user, err := u.userRepo.GetByEmail(tx, req.Email)
-	if user.Email == req.Email {
-		logger.Log.WithError(err).Error("Error email already exists")
-		return domain.User{}, utils.NewConflictError("Email already exists")
-	}
+		hashedPassword, err := utils.HashPassword(req.Password)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to hash password")
+			return utils.NewInternalError("Failed to hash password")
+		}
 
-	hashedPassword, err := utils.HashPassword(req.Password)
+		user = domain.User{
+			Id:       uuid.New(),
+			Name:     req.Name,
+			Password: hashedPassword,
+			Email:    req.Email,
+			Role:     "customer",
+		}
+
+		err = adapters.UserRepository.Create(ctx, user)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to create user")
+			return utils.NewInternalError("Failed to create user")
+		}
+		createdUser, err := adapters.UserRepository.Get(ctx, user.Id)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to get user")
+			return utils.NewInternalError("Failed to get user")
+		}
+		result = createdUser
+		return nil
+	})
+
 	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to hash password")
-		return domain.User{}, utils.NewInternalError("Failed to hash password")
+		return result, err
 	}
 
-	user = domain.User{
-		Id:       uuid.New(),
-		Name:     req.Name,
-		Password: hashedPassword,
-		Email:    req.Email,
-		Role:     "customer",
-	}
-
-	createdUser, err := u.userRepo.Create(tx, user)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to create user")
-		return domain.User{}, utils.NewInternalError("Failed to create user")
-	}
-
-	if err = tx.Commit(); err != nil {
-		logger.Log.WithError(err).Error("Error failed to commit transaction")
-		return domain.User{}, utils.NewInternalError("Failed to commit transaction")
-	}
-	return createdUser, nil
+	return result, nil
 }
 
-func (u *UserUsecaseImpl) Get(ctx context.Context, id string) (domain.User, error) {
-	tx, err := u.db.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error begin transaction")
-		return domain.User{}, utils.NewInternalError("Failed to begin transaction")
-	}
-	defer func() {
-		if err != nil {
-			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
-			tx.Rollback()
-		}
-	}()
-	user, err := u.userRepo.Get(tx, id)
+func (u *UserUsecaseImpl) Get(ctx context.Context, id uuid.UUID) (domain.User, error) {
+	user, err := u.userRepo.Get(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error user not found")
 		return domain.User{}, utils.NewNotFoundError("User not found")
-	}
-
-	if err = tx.Commit(); err != nil {
-		logger.Log.WithError(err).Error("Error failed to commit transaction")
-		return domain.User{}, utils.NewInternalError("Failed to commit transaction")
 	}
 	return user, nil
 }
 
-func (u *UserUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateUserRequest) (domain.User, error) {
-	tx, err := u.db.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error begin transaction")
-		return domain.User{}, utils.NewInternalError("Failed to begin transaction")
-	}
-	defer func() {
-		if err != nil {
-			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
-			tx.Rollback()
+func (u *UserUsecaseImpl) Update(ctx context.Context, id, authId uuid.UUID, req dto.UpdateUserRequest) (domain.User, error) {
+	result := domain.User{}
+	err := u.txRepo.Transact(func(adapters repository.Adapters) error {
+		if err := utils.ValidateStruct(req); len(err) > 0 {
+			logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
+			return utils.NewValidationError(err)
 		}
-	}()
-	if err := utils.ValidateStruct(req); len(err) > 0 {
-		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
-		return domain.User{}, utils.NewValidationError(err)
-	}
 
-	userID, err := uuid.Parse(id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error invalid id format")
-		return domain.User{}, utils.NewValidationError("Invalid id format")
-	}
-
-	_, err = u.userRepo.Get(tx, id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error user not found")
-		return domain.User{}, utils.NewNotFoundError("User not found")
-	}
-
-	user, err := u.userRepo.GetByEmail(tx, req.Email)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error user not found")
-		return domain.User{}, utils.NewNotFoundError("User not found")
-	}
-	if user.Email == req.Email {
-		logger.Log.WithError(err).Error("Error email already exists")
-		return domain.User{}, utils.NewConflictError("Email already exists")
-	}
-
-	user = domain.User{
-		Id:    userID,
-		Name:  req.Name,
-		Email: req.Email,
-		Role:  req.Role,
-		Phone: &req.Phone,
-	}
-
-	if req.Password != "" {
-		hashedPassword, err := utils.HashPassword(req.Password)
-		if err != nil {
-			logger.Log.WithError(err).Error("Error failed to hash password")
-			return domain.User{}, utils.NewInternalError("Failed to hash password")
+		if authId != id {
+			logger.Log.WithField("user_id", authId).WithField("update_user_id", id).Error("You cannot update a user")
+			return utils.NewUnauthorizedError("You cannot update a user")
 		}
-		user.Password = hashedPassword
-	}
 
-	updatedUser, err := u.userRepo.Update(tx, user)
+		existingUser, err := adapters.UserRepository.Get(ctx, id)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error user not found")
+			return utils.NewNotFoundError("User not found")
+		}
+
+		existingUser, err = adapters.UserRepository.GetByEmail(ctx, existingUser.Email)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error user not found")
+			return utils.NewNotFoundError("User not found")
+		}
+
+		user := domain.User{
+			Name:  req.Name,
+			Email: req.Email,
+			Role:  req.Role,
+			Phone: &req.Phone,
+		}
+
+		if req.Name == "" {
+			user.Name = existingUser.Name
+		}
+		if req.Phone == "" {
+			user.Phone = existingUser.Phone
+		}
+		if req.Role == "" {
+			user.Role = existingUser.Role
+		}
+		if req.Email == "" {
+			user.Email = existingUser.Email
+		} else {
+			existingUserWithEmail, err := adapters.UserRepository.GetByEmail(ctx, req.Email)
+			if err != nil {
+				logger.Log.WithError(err).Error("Error user not found")
+				return utils.NewNotFoundError("User not found")
+			}
+			if existingUserWithEmail.Email == req.Email {
+				logger.Log.WithError(err).Error("Error email already exists")
+				return utils.NewConflictError("Email already exists")
+			}
+		}
+
+		if req.Password != "" {
+			hashedPassword, err := utils.HashPassword(req.Password)
+			if err != nil {
+				logger.Log.WithError(err).Error("Error failed to hash password")
+				return utils.NewInternalError("Failed to hash password")
+			}
+			user.Password = hashedPassword
+		} else {
+			user.Password = existingUser.Password
+		}
+
+		err = adapters.UserRepository.Update(ctx, id, user)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to update user")
+			return utils.NewInternalError("Failed to update user")
+		}
+
+		updatedUser, err := adapters.UserRepository.Get(ctx, id)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to get user")
+			return utils.NewInternalError("Failed to get user")
+		}
+		result = updatedUser
+		return nil
+	})
+
 	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to update user")
-		return domain.User{}, utils.NewInternalError("Failed to update user")
+		return result, err
 	}
 
-	if err = tx.Commit(); err != nil {
-		logger.Log.WithError(err).Error("Error failed to commit transaction")
-		return domain.User{}, utils.NewInternalError("Failed to commit transaction")
-	}
-
-	return updatedUser, nil
+	return result, nil
 }
 
-func (u *UserUsecaseImpl) Delete(ctx context.Context, id string) error {
-	tx, err := u.db.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error begin transaction")
-		return utils.NewInternalError("Failed to begin transaction")
-	}
-	defer func() {
-		if err != nil {
-			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
-			tx.Rollback()
+func (u *UserUsecaseImpl) Delete(ctx context.Context, id uuid.UUID) error {
+	err := u.txRepo.Transact(func(adapters repository.Adapters) error {
+		if _, err := adapters.UserRepository.Get(ctx, id); err != nil {
+			logger.Log.WithError(err).Error("Error user not found")
+			return utils.NewNotFoundError("User not found")
 		}
-	}()
 
-	if _, err := uuid.Parse(id); err != nil {
-		logger.Log.WithError(err).Error("Error invalid ID format")
-		return utils.NewValidationError("Invalid ID format")
-	}
-
-	if _, err := u.userRepo.Get(tx, id); err != nil {
-		logger.Log.WithError(err).Error("Error user not found")
-		return utils.NewNotFoundError("User not found")
-	}
-
-	err = u.userRepo.Delete(tx, id)
+		err := adapters.UserRepository.Delete(ctx, id)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to delete user")
+			return utils.NewInternalError("Failed to delete user")
+		}
+		return nil
+	})
 	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to delete user")
-		return utils.NewInternalError("Failed to delete user")
+		return err
 	}
-
-	if err = tx.Commit(); err != nil {
-		logger.Log.WithError(err).Error("Error failed to commit transaction")
-		return utils.NewInternalError("Failed to commit transaction")
-	}
-
 	return nil
 }
 
-func (u *UserUsecaseImpl) Restore(ctx context.Context, id string) (domain.User, error) {
-	tx, err := u.db.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error begin transaction")
-		return domain.User{}, utils.NewInternalError("Failed to begin transaction")
-	}
-	defer func() {
+func (u *UserUsecaseImpl) Restore(ctx context.Context, id uuid.UUID) (domain.User, error) {
+	result := domain.User{}
+	err := u.txRepo.Transact(func(adapters repository.Adapters) error {
+		_, err := adapters.UserRepository.GetDeletedUserById(ctx, id)
 		if err != nil {
-			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
-			tx.Rollback()
+			logger.Log.WithError(err).Error("Error user not found to restore")
+			return utils.NewNotFoundError("User not found to restore")
 		}
-	}()
 
-	if _, err := uuid.Parse(id); err != nil {
-		logger.Log.WithError(err).Error("Error invalid ID format")
-		return domain.User{}, utils.NewValidationError("Invalid ID format")
-	}
+		err = adapters.UserRepository.Restore(ctx, id)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to restore user")
+			return utils.NewInternalError("Failed to restore user")
+		}
+		restoredUser, err := adapters.UserRepository.Get(ctx, id)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to get user")
+			return utils.NewInternalError("Failed to get user")
+		}
+		result = restoredUser
 
-	_, err = u.userRepo.GetDeletedUserById(tx, id)
+		return nil
+	})
 	if err != nil {
-		logger.Log.WithError(err).Error("Error user not found to restore")
-		return domain.User{}, utils.NewNotFoundError("User not found to restore")
+		return result, err
 	}
-
-	restoredUser, err := u.userRepo.Restore(tx, id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to restore user")
-		return domain.User{}, utils.NewInternalError("Failed to restore user")
-	}
-
-	if err = tx.Commit(); err != nil {
-		logger.Log.WithError(err).Error("Error failed to commit transaction")
-		return domain.User{}, utils.NewInternalError("Failed to commit transaction")
-	}
-	return restoredUser, nil
+	return result, nil
 }

@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
@@ -82,7 +84,14 @@ func (h *MenuHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *MenuHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := mux.Vars(r)["id"]
+	idStr := mux.Vars(r)["id"]
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
+		return
+	}
 
 	menu, err := h.menuUsecase.Get(ctx, id)
 
@@ -97,7 +106,14 @@ func (h *MenuHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 
 func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := mux.Vars(r)["id"]
+	idStr := mux.Vars(r)["id"]
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
+		return
+	}
 
 	// Parse multipart form
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
@@ -113,12 +129,15 @@ func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse price
-	price, err := strconv.ParseFloat(r.FormValue("price"), 64)
-	if err != nil {
-		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid price format"))
-		return
+	reqPrice := r.FormValue("price")
+	if reqPrice != "" {
+		price, err := strconv.ParseFloat(reqPrice, 64)
+		if err != nil {
+			utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid price format"))
+			return
+		}
+		req.Price = price
 	}
-	req.Price = price
 
 	// Get file (optional)
 	file, handler, err := r.FormFile("image")
@@ -141,9 +160,16 @@ func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *MenuHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := mux.Vars(r)["id"]
+	idStr := mux.Vars(r)["id"]
 
-	err := h.menuUsecase.Delete(ctx, id)
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
+		return
+	}
+
+	err = h.menuUsecase.Delete(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to delete menu")
 		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
@@ -156,7 +182,14 @@ func (h *MenuHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 
 func (h *MenuHandlerImpl) Restore(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := mux.Vars(r)["id"]
+	idStr := mux.Vars(r)["id"]
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
+		return
+	}
 
 	menu, err := h.menuUsecase.Restore(ctx, id)
 	if err != nil {

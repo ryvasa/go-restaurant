@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
@@ -46,7 +47,14 @@ func (h *ReviewHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid request body"))
 	}
 
-	createdReview, err := h.reviewUsecase.Create(ctx, req, userId)
+	id, err := uuid.Parse(userId)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid user id format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid user id format"))
+		return
+	}
+
+	createdReview, err := h.reviewUsecase.Create(ctx, req, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to create review")
 		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
@@ -58,7 +66,14 @@ func (h *ReviewHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *ReviewHandlerImpl) GetAllByMenuId(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := mux.Vars(r)["id"]
+	idStr := mux.Vars(r)["id"]
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid id format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid id format"))
+		return
+	}
 
 	reviews, err := h.reviewUsecase.GetAllByMenuId(ctx, id)
 	if err != nil {
@@ -72,7 +87,14 @@ func (h *ReviewHandlerImpl) GetAllByMenuId(w http.ResponseWriter, r *http.Reques
 
 func (h *ReviewHandlerImpl) GetOneById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := mux.Vars(r)["id"]
+	idStr := mux.Vars(r)["id"]
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid id format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid id format"))
+		return
+	}
 
 	review, err := h.reviewUsecase.GetOneById(ctx, id)
 	if err != nil {
@@ -86,7 +108,14 @@ func (h *ReviewHandlerImpl) GetOneById(w http.ResponseWriter, r *http.Request) {
 
 func (h *ReviewHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := mux.Vars(r)["id"]
+	idStr := mux.Vars(r)["id"]
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid id format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid id format"))
+		return
+	}
 
 	var req dto.UpdateReviewRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -101,11 +130,18 @@ func (h *ReviewHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, ok := claims["sub"].(string)
+	userIdStr, ok := claims["sub"].(string)
 	if !ok {
 		logger.Log.Error("Error getting user ID from claims")
 		utils.HttpResponse(w, http.StatusUnauthorized, nil,
 			utils.NewUnauthorizedError("Invalid user ID"))
+		return
+	}
+
+	userId, err := uuid.Parse(userIdStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid id format")
+		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid id format"))
 		return
 	}
 

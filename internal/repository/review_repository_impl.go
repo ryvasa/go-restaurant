@@ -1,22 +1,25 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 
+	"github.com/google/uuid"
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
 )
 
 type ReviewRepositoryImpl struct {
+	db DB
 }
 
-func NewReviewRepository() ReviewRepository {
-	return &ReviewRepositoryImpl{}
+func NewReviewRepository(db DB) ReviewRepository {
+	return &ReviewRepositoryImpl{db}
 }
 
-func (r *ReviewRepositoryImpl) GetAllByMenuId(tx *sql.Tx, menuId string) ([]domain.Review, error) {
+func (r *ReviewRepositoryImpl) GetAllByMenuId(ctx context.Context, menuId uuid.UUID) ([]domain.Review, error) {
 	reviews := []domain.Review{}
-	rows, err := tx.Query("SELECT id,rating,comment,user_id,menu_id,order_id,created_at,updated_at FROM review WHERE menu_id = ? AND deleted_at IS NULL AND deleted = false", menuId)
+	rows, err := r.db.QueryContext(ctx, "SELECT id,rating,comment,user_id,menu_id,order_id,created_at,updated_at FROM review WHERE menu_id = ? AND deleted_at IS NULL AND deleted = false", menuId)
 	if err != nil {
 		return []domain.Review{}, err
 	}
@@ -32,18 +35,17 @@ func (r *ReviewRepositoryImpl) GetAllByMenuId(tx *sql.Tx, menuId string) ([]doma
 	return reviews, nil
 }
 
-func (r *ReviewRepositoryImpl) Create(tx *sql.Tx, review domain.Review) (domain.Review, error) {
-	_, err := tx.Exec("INSERT INTO review (id,rating, comment, user_id, menu_id, order_id) VALUES (?, ?, ?, ?, ?, ?)", review.Id, review.Rating, review.Comment, review.UserId, review.MenuId, review.OrderId)
+func (r *ReviewRepositoryImpl) Create(ctx context.Context, review domain.Review) error {
+	_, err := r.db.ExecContext(ctx, "INSERT INTO review (id,rating, comment, user_id, menu_id, order_id) VALUES (?, ?, ?, ?, ?, ?)", review.Id, review.Rating, review.Comment, review.UserId, review.MenuId, review.OrderId)
 	if err != nil {
-		return domain.Review{}, err
+		return err
 	}
-	createdReview, err := r.GetOneById(tx, review.Id.String())
-	return createdReview, nil
+	return nil
 }
 
-func (r *ReviewRepositoryImpl) GetOneById(tx *sql.Tx, id string) (domain.Review, error) {
+func (r *ReviewRepositoryImpl) GetOneById(ctx context.Context, id uuid.UUID) (domain.Review, error) {
 	var review domain.Review
-	err := tx.QueryRow("SELECT id, rating, comment, user_id, menu_id, order_id, created_at, updated_at FROM review WHERE id = ? AND deleted_at IS NULL AND deleted = false", id).Scan(&review.Id, &review.Rating, &review.Comment, &review.UserId, &review.MenuId, &review.OrderId, &review.CreatedAt, &review.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, "SELECT id, rating, comment, user_id, menu_id, order_id, created_at, updated_at FROM review WHERE id = ? AND deleted_at IS NULL AND deleted = false", id).Scan(&review.Id, &review.Rating, &review.Comment, &review.UserId, &review.MenuId, &review.OrderId, &review.CreatedAt, &review.UpdatedAt)
 
 	if err != nil {
 		return domain.Review{}, err
@@ -52,28 +54,17 @@ func (r *ReviewRepositoryImpl) GetOneById(tx *sql.Tx, id string) (domain.Review,
 	return review, nil
 }
 
-func (r *ReviewRepositoryImpl) Update(tx *sql.Tx, review domain.Review) (domain.Review, error) {
-	exsistingReview, err := r.GetOneById(tx, review.Id.String())
+func (r *ReviewRepositoryImpl) Update(ctx context.Context, id uuid.UUID, review domain.Review) error {
+	_, err := r.db.ExecContext(ctx, "UPDATE review SET rating = ?, comment = ? WHERE id = ?", review.Rating, review.Comment, id)
 	if err != nil {
-		return domain.Review{}, err
+		return err
 	}
-	if review.Rating != 0 {
-		exsistingReview.Rating = review.Rating
-	}
-	if review.Comment != "" {
-		exsistingReview.Comment = review.Comment
-	}
-	_, err = tx.Exec("UPDATE review SET rating = ?, comment = ? WHERE id = ?", exsistingReview.Rating, exsistingReview.Comment, review.Id)
-	if err != nil {
-		return domain.Review{}, err
-	}
-	updatedReview, err := r.GetOneById(tx, review.Id.String())
-	return updatedReview, nil
+	return nil
 }
 
-func (r *ReviewRepositoryImpl) CheckReviewedItem(tx *sql.Tx, userId, menuId, orderId string) bool {
+func (r *ReviewRepositoryImpl) CheckReviewedItem(ctx context.Context, userId, menuId, orderId uuid.UUID) bool {
 	var count int
-	err := tx.QueryRow("SELECT COUNT(*) FROM review WHERE user_id = ? AND menu_id = ? AND order_id = ?", userId, menuId, orderId).Scan(&count)
+	err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM review WHERE user_id = ? AND menu_id = ? AND order_id = ?", userId, menuId, orderId).Scan(&count)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to check reviewed item")
 		return false
@@ -84,12 +75,12 @@ func (r *ReviewRepositoryImpl) CheckReviewedItem(tx *sql.Tx, userId, menuId, ord
 	return false
 }
 
-func (r *ReviewRepositoryImpl) CountReviewByMenuId(tx *sql.Tx, menuId string) (int, float64, error) {
+func (r *ReviewRepositoryImpl) CountReviewByMenuId(ctx context.Context, menuId uuid.UUID) (int, float64, error) {
 	var totalReviews int
 	var totalRating sql.NullFloat64
 
 	query := "SELECT COUNT(*) AS total_reviews, COALESCE(SUM(rating), 0) AS total_rating FROM review WHERE menu_id = ?"
-	err := tx.QueryRow(query, menuId).Scan(&totalReviews, &totalRating)
+	err := r.db.QueryRowContext(ctx, query, menuId).Scan(&totalReviews, &totalRating)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to get review stats by menu id")
 		return 0, 0, nil

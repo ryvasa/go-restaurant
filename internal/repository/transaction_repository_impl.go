@@ -29,15 +29,21 @@ type Adapters struct {
 	MenuRepository        MenuRepository
 	TableRepository       TableRepository
 	ReservationRepository ReservationRepository
+	OrderRepository       OrderRepository
+	OrderMenuRepository   OrderMenuRepository
+	ReviewRepository      ReviewRepository
 }
 
 func (p *TransactionRepositoryImpl) Transact(txFunc func(adapters Adapters) error) error {
 	return runInTx(p.db, func(tx *sql.Tx) error {
 		adapters := Adapters{
-			UserRepository:        NewUserRepository(),
-			MenuRepository:        NewMenuRepository(),
+			UserRepository:        NewUserRepository(tx),
+			MenuRepository:        NewMenuRepository(tx),
 			TableRepository:       NewTableRepository(tx),
 			ReservationRepository: NewReservationRepository(tx),
+			OrderRepository:       NewOrderRepository(tx),
+			OrderMenuRepository:   NewOrderMenuRepository(tx),
+			ReviewRepository:      NewReviewRepository(tx),
 		}
 
 		return txFunc(adapters)
