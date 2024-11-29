@@ -37,5 +37,5 @@ func (a *AuthHandlerImpl) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.HttpResponse(w, http.StatusCreated, createdUser, nil)
+	utils.HttpResponse(w, http.StatusOK, createdUser, nil)
 }

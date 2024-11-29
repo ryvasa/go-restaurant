@@ -4,6 +4,8 @@
 package di
 
 import (
+	"database/sql"
+
 	"github.com/google/wire"
 	"github.com/ryvasa/go-restaurant/internal/delivery/http/handler"
 	"github.com/ryvasa/go-restaurant/internal/repository"
@@ -46,6 +48,26 @@ var userSet = wire.NewSet(
 	handler.NewUserHandler,
 )
 
+func ProvideDBConnection(db *sql.DB) repository.DB {
+	return db
+}
+
+var tableSet = wire.NewSet(
+	repository.NewTableRepository,
+	usecase.NewTableUsecase,
+	handler.NewTableHandler,
+)
+
+var reservationSet = wire.NewSet(
+	repository.NewReservationRepository,
+	usecase.NewReservationUsecase,
+	handler.NewReservationHandler,
+)
+
+var txSet = wire.NewSet(
+	repository.NewTransactionRepository,
+)
+
 var utilSet = wire.NewSet(
 	utils.NewTokenUtil,
 )
@@ -56,6 +78,7 @@ func InitializeHandlers() (*handler.Handlers, error) {
 		config.LoadConfig,
 		database.ProvideDSN,
 		database.NewMySQLConnection,
+		ProvideDBConnection,
 		utilSet,
 		menuSet,
 		userSet,
@@ -63,6 +86,9 @@ func InitializeHandlers() (*handler.Handlers, error) {
 		authSet,
 		orderSet,
 		orderMenuSet,
+		tableSet,
+		reservationSet,
+		txSet,
 		handler.NewHandlers,
 	)
 	return &handler.Handlers{}, nil

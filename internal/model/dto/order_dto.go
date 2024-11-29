@@ -10,7 +10,7 @@ type CreateOrderDto struct {
 }
 
 type UpdateOrderStatusDto struct {
-	Status string `json:"status,omitempty" validate:"omitempty,oneof=pending processing success cancel"`
+	Status string `json:"status,omitempty" validate:"omitempty,oneof=pending processing success failed"`
 }
 
 type UpdatePaymentDto struct {

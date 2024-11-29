@@ -6,10 +6,10 @@ import (
 )
 
 func OrderRoutes(protected *mux.Router, handler handler.OrderHandler) {
-	protected.HandleFunc("/order", handler.Create).Methods("POST")
-	protected.HandleFunc("/order/{id}", handler.GetOneById).Methods("GET")
+	protected.HandleFunc("/orders", handler.Create).Methods("POST")
+	protected.HandleFunc("/orders/{id}", handler.GetOneById).Methods("GET")
 
 	// staff and admin only
-	protected.HandleFunc("/order/{id}/status", handler.UpdateOrderStatus).Methods("PATCH")
-	protected.HandleFunc("/order/{id}/payment", handler.UpdatePayment).Methods("PATCH")
+	protected.HandleFunc("/orders/{id}/status", handler.UpdateOrderStatus).Methods("PATCH")
+	protected.HandleFunc("/orders/{id}/payment", handler.UpdatePayment).Methods("PATCH")
 }
