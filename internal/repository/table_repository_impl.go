@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -55,15 +55,15 @@ func (r *TableRepositoryImpl) Create(ctx context.Context, table domain.Table) er
 }
 
 func (r *TableRepositoryImpl) Update(ctx context.Context, id uuid.UUID, table domain.Table) error {
-	log.Println(table)
 	result, err := r.db.ExecContext(ctx, "UPDATE tables SET number = ?, capacity = ?, location = ?, status = ? WHERE id = ?",
 		table.Number, table.Capacity, table.Location, table.Status, id)
 	if err != nil {
 		return err
 	}
 	rowsAffected, _ := result.RowsAffected()
-	log.Printf("Rows affected: %d", rowsAffected)
-
+	if rowsAffected == 0 {
+		return fmt.Errorf("No rows affected")
+	}
 	return nil
 }
 

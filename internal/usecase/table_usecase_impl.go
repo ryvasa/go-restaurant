@@ -2,8 +2,6 @@ package usecase
 
 import (
 	"context"
-	"database/sql"
-	"log"
 
 	"github.com/google/uuid"
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
@@ -14,14 +12,12 @@ import (
 )
 
 type TableUsecaseImpl struct {
-	db        *sql.DB
 	tableRepo repository.TableRepository
 	txRepo    repository.TransactionRepository
 }
 
-func NewTableUsecase(db *sql.DB, tableRepo repository.TableRepository, txRepo repository.TransactionRepository) TableUsecase {
+func NewTableUsecase(tableRepo repository.TableRepository, txRepo repository.TransactionRepository) TableUsecase {
 	return &TableUsecaseImpl{
-		db,
 		tableRepo,
 		txRepo,
 	}
@@ -111,7 +107,6 @@ func (u *TableUsecaseImpl) Update(ctx context.Context, id uuid.UUID, req dto.Upd
 		if table.Status == "" {
 			table.Status = existingTable.Status
 		}
-		log.Println(table)
 
 		err = adapters.TableRepository.Update(ctx, id, table)
 		if err != nil {

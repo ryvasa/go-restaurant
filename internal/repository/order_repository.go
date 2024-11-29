@@ -1,14 +1,15 @@
 package repository
 
 import (
-	"database/sql"
+	"context"
 
+	"github.com/google/uuid"
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
 )
 
 type OrderRepository interface {
-	Create(tx *sql.Tx, order domain.Order) (domain.Order, error)
-	GetOneById(tx *sql.Tx, id string) (domain.Order, error)
-	UpdateOrderStatus(tx *sql.Tx, id string, order domain.Order) (domain.Order, error)
-	UpdatePayment(tx *sql.Tx, id string, order domain.Order) (domain.Order, error)
+	Create(ctx context.Context, order domain.Order) error
+	GetOneById(ctx context.Context, id uuid.UUID) (domain.Order, error)
+	UpdateOrderStatus(ctx context.Context, id uuid.UUID, order domain.Order) error
+	UpdatePayment(ctx context.Context, id uuid.UUID, order domain.Order) error
 }

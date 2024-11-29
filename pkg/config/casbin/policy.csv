@@ -9,11 +9,13 @@ p, staff, /api/menu*, POST
 p, staff, /api/menu*, GET
 p, staff, /api/menu/*/restore, PATCH
 p, staff, /api/users, GET
+p, staff, /api/users, PATCH
 p, staff, /api/reviews*, GET
 p, staff, /api/orders*, *
 p, staff, /api/tables*, *
 p, staff, /api/reservations*, *
 
+p, customer, /api/users*, PATCH
 p, customer, /api/menu*, GET
 p, customer, /api/reviews*, GET
 p, customer, /api/reviews, POST

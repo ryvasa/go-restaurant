@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"database/sql"
 	"mime/multipart"
 
 	"github.com/google/uuid"
@@ -14,241 +13,193 @@ import (
 )
 
 type MenuUsecaseImpl struct {
-	db       *sql.DB
 	menuRepo repository.MenuRepository
+	txRepo   repository.TransactionRepository
 }
 
-func NewMenuUsecase(db *sql.DB, menuRepo repository.MenuRepository) MenuUsecase {
-	return &MenuUsecaseImpl{db: db, menuRepo: menuRepo}
+func NewMenuUsecase(menuRepo repository.MenuRepository, txRepo repository.TransactionRepository) MenuUsecase {
+	return &MenuUsecaseImpl{menuRepo, txRepo}
 }
 func (u *MenuUsecaseImpl) GetAll(ctx context.Context) ([]domain.Menu, error) {
-	tx, err := u.db.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error begin transaction")
-		return []domain.Menu{}, utils.NewInternalError("Failed to begin transaction")
-	}
-	defer func() {
-		if err != nil {
-			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
-			tx.Rollback()
-		}
-	}()
-	menu, err := u.menuRepo.GetAll(tx)
+	menu, err := u.menuRepo.GetAll(ctx)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to get all menu")
 		return []domain.Menu{}, utils.NewInternalError("Failed to get all menu")
 	}
 
-	if err = tx.Commit(); err != nil {
-		logger.Log.WithError(err).Error("Error failed to commit transaction")
-		return []domain.Menu{}, utils.NewInternalError("Failed to commit transaction")
-	}
 	return menu, nil
 }
 func (u *MenuUsecaseImpl) Create(ctx context.Context, req dto.CreateMenuRequest, file multipart.File) (domain.Menu, error) {
-	tx, err := u.db.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error begin transaction")
-		return domain.Menu{}, utils.NewInternalError("Failed to begin transaction")
-	}
-	defer func() {
-		if err != nil {
-			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
-			tx.Rollback()
+	result := domain.Menu{}
+	err := u.txRepo.Transact(func(adapters repository.Adapters) error {
+		if err := utils.ValidateStruct(req); len(err) > 0 {
+			logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
+			return utils.NewValidationError(err)
 		}
-	}()
-	// Validate request
-	if err := utils.ValidateStruct(req); len(err) > 0 {
-		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
-		return domain.Menu{}, utils.NewValidationError(err)
-	}
 
-	// Upload file after validation
-	imagePath, err := utils.UploadFile(file, req.Image, "menu")
-	if err != nil {
-		logger.Log.WithError(err).Error("Error uploading file")
-		return domain.Menu{}, utils.NewInternalError("Failed to upload image")
-	}
+		imagePath, err := utils.UploadFile(file, req.Image, "menu")
+		if err != nil {
+			logger.Log.WithError(err).Error("Error uploading file")
+			return utils.NewInternalError("Failed to upload image")
+		}
 
-	menu := domain.Menu{
-		Id:          uuid.New(),
-		Name:        req.Name,
-		Price:       req.Price,
-		Description: req.Description,
-		Category:    req.Category,
-		ImageURL:    imagePath,
-	}
-	createdMenu, err := u.menuRepo.Create(tx, menu)
+		menu := domain.Menu{
+			Id:          uuid.New(),
+			Name:        req.Name,
+			Price:       req.Price,
+			Description: req.Description,
+			Category:    req.Category,
+			ImageURL:    imagePath,
+		}
+		err = adapters.MenuRepository.Create(ctx, menu)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to create menu")
+			return utils.NewInternalError("Failed to create menu")
+		}
+		createdMenu, err := adapters.MenuRepository.Get(ctx, menu.Id)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to get created menu")
+			return utils.NewInternalError("Failed to get created menu")
+		}
+		result = createdMenu
+		return nil
+	})
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to create menu")
-		return domain.Menu{}, utils.NewInternalError("Failed to create menu")
+		return domain.Menu{}, err
 	}
 
-	if err := tx.Commit(); err != nil {
-		logger.Log.WithError(err).Error("Error failed to commit transaction")
-		return domain.Menu{}, utils.NewInternalError("Failed to commit transaction")
-	}
-
-	return createdMenu, nil
+	return result, nil
 }
 
-func (u *MenuUsecaseImpl) Get(ctx context.Context, id string) (domain.Menu, error) {
-	tx, err := u.db.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error begin transaction")
-		return domain.Menu{}, utils.NewInternalError("Failed to begin transaction")
-	}
-	defer func() {
-		if err != nil {
-			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
-			tx.Rollback()
-		}
-	}()
-
-	menu, err := u.menuRepo.Get(tx, id)
+func (u *MenuUsecaseImpl) Get(ctx context.Context, id uuid.UUID) (domain.Menu, error) {
+	menu, err := u.menuRepo.Get(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error menu not found")
 		return domain.Menu{}, utils.NewNotFoundError("Menu not found")
-	}
-
-	if err := tx.Commit(); err != nil {
-		logger.Log.WithError(err).Error("Error failed to commit transaction")
-		return domain.Menu{}, utils.NewInternalError("Failed to commit transaction")
 	}
 	return menu, nil
 }
 
-func (u *MenuUsecaseImpl) Update(ctx context.Context, id string, req dto.UpdateMenuRequest, file multipart.File) (domain.Menu, error) {
-	tx, err := u.db.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error begin transaction")
-		return domain.Menu{}, utils.NewInternalError("Failed to begin transaction")
-	}
-	defer func() {
-		if err != nil {
-			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
-			tx.Rollback()
+func (u *MenuUsecaseImpl) Update(ctx context.Context, id uuid.UUID, req dto.UpdateMenuRequest, file multipart.File) (domain.Menu, error) {
+	result := domain.Menu{}
+	err := u.txRepo.Transact(func(adapters repository.Adapters) error {
+		if err := utils.ValidateStruct(req); len(err) > 0 {
+			logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
+			return utils.NewValidationError(err)
 		}
-	}()
 
-	if err := utils.ValidateStruct(req); len(err) > 0 {
-		logger.Log.WithField("validation_errors", err).Error("Error invalid request body")
-		return domain.Menu{}, utils.NewValidationError(err)
-	}
-
-	menuId, err := uuid.Parse(id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error invalid id format")
-		return domain.Menu{}, utils.NewValidationError("Invalid id format")
-	}
-
-	existingMenu, err := u.menuRepo.Get(tx, id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error menu not found")
-		return domain.Menu{}, utils.NewNotFoundError("Menu not found")
-	}
-
-	menu := domain.Menu{
-		Id:          menuId,
-		Name:        req.Name,
-		Price:       req.Price,
-		Description: req.Description,
-		Category:    req.Category,
-		ImageURL:    existingMenu.ImageURL, // Keep existing image if no new image
-	}
-
-	// Upload new image if provided
-	if file != nil && req.Image != nil {
-		imagePath, err := utils.UploadFile(file, req.Image, "menu")
+		existingMenu, err := adapters.MenuRepository.Get(ctx, id)
 		if err != nil {
-			logger.Log.WithError(err).Error("Error uploading file")
-			return domain.Menu{}, utils.NewInternalError("Failed to upload image")
+			logger.Log.WithError(err).Error("Error menu not found")
+			return utils.NewNotFoundError("Menu not found")
 		}
-		menu.ImageURL = imagePath
-	}
-	updatedMenu, err := u.menuRepo.Update(tx, menu)
+
+		menu := domain.Menu{
+			Name:        req.Name,
+			Price:       req.Price,
+			Description: req.Description,
+			Category:    req.Category,
+			ImageURL:    existingMenu.ImageURL,
+		}
+
+		if file != nil && req.Image != nil {
+			imagePath, err := utils.UploadFile(file, req.Image, "menu")
+			if err != nil {
+				logger.Log.WithError(err).Error("Error uploading file")
+				return utils.NewInternalError("Failed to upload image")
+			}
+			menu.ImageURL = imagePath
+		}
+
+		if req.Name == "" {
+			menu.Name = existingMenu.Name
+		}
+		if req.Description == "" {
+			menu.Description = existingMenu.Description
+		}
+		if req.Price == 0 {
+			menu.Price = existingMenu.Price
+		}
+		if req.Category == "" {
+			menu.Category = existingMenu.Category
+		}
+
+		if menu.ImageURL == "" {
+			menu.ImageURL = existingMenu.ImageURL
+		}
+
+		err = adapters.MenuRepository.Update(ctx, id, menu)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to update menu")
+			return utils.NewInternalError("Failed to update menu")
+		}
+		updatedMenu, err := adapters.MenuRepository.Get(ctx, id)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to get updated menu")
+			return utils.NewInternalError("Failed to get updated menu")
+		}
+		result = updatedMenu
+		return nil
+	})
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to update menu")
-		return domain.Menu{}, utils.NewInternalError("Failed to update menu")
+		return domain.Menu{}, err
 	}
-
-	if err := tx.Commit(); err != nil {
-		logger.Log.WithError(err).Error("Error failed to commit transaction")
-		return domain.Menu{}, utils.NewInternalError("Failed to commit transaction")
-	}
-	return updatedMenu, nil
+	return result, nil
 }
 
-func (u *MenuUsecaseImpl) Delete(ctx context.Context, id string) error {
-	tx, err := u.db.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error begin transaction")
-		return utils.NewInternalError("Failed to begin transaction")
-	}
-	defer func() {
+func (u *MenuUsecaseImpl) Delete(ctx context.Context, id uuid.UUID) error {
+	err := u.txRepo.Transact(func(adapters repository.Adapters) error {
+		_, err := adapters.MenuRepository.Get(ctx, id)
 		if err != nil {
-			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
-			tx.Rollback()
+			logger.Log.WithError(err).Error("Error menu not found")
+			return utils.NewNotFoundError("Menu not found")
 		}
-	}()
 
-	if _, err := uuid.Parse(id); err != nil {
-		logger.Log.WithError(err).Error("Error invalid ID format")
-		return utils.NewValidationError("Invalid ID format")
-	}
+		err = adapters.MenuRepository.Delete(ctx, id)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to delete menu")
+			return utils.NewInternalError("Failed to delete menu")
+		}
 
-	_, err = u.menuRepo.Get(tx, id)
+		return nil
+	})
 	if err != nil {
-		logger.Log.WithError(err).Error("Error menu not found")
-		return utils.NewNotFoundError("Menu not found")
+		return err
 	}
 
-	err = u.menuRepo.Delete(tx, id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error failed to delete menu")
-		return utils.NewInternalError("Failed to delete menu")
-	}
-
-	if err := tx.Commit(); err != nil {
-		logger.Log.WithError(err).Error("Error failed to commit transaction")
-		return utils.NewInternalError("Failed to commit transaction")
-	}
 	return nil
 }
 
-func (u *MenuUsecaseImpl) Restore(ctx context.Context, id string) (domain.Menu, error) {
-	tx, err := u.db.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error begin transaction")
-		return domain.Menu{}, utils.NewInternalError("Failed to begin transaction")
-	}
-	defer func() {
+func (u *MenuUsecaseImpl) Restore(ctx context.Context, id uuid.UUID) (domain.Menu, error) {
+	result := domain.Menu{}
+	err := u.txRepo.Transact(func(adapters repository.Adapters) error {
+		_, err := adapters.MenuRepository.GetDeletedMenuById(ctx, id)
 		if err != nil {
-			logger.Log.WithError(err).Error("Error when executing a transaction, rollback")
-			tx.Rollback()
+			logger.Log.WithError(err).Error("Error menu not found to restore")
+			return utils.NewNotFoundError("Menu not found to restore")
 		}
-	}()
 
-	if _, err := uuid.Parse(id); err != nil {
-		logger.Log.WithError(err).Error("Error invalid ID format")
-		return domain.Menu{}, utils.NewValidationError("Invalid ID format")
-	}
+		err = adapters.MenuRepository.Restore(ctx, id)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to restore menu")
+			return utils.NewInternalError("Failed to restore menu")
+		}
 
-	_, err = u.menuRepo.GetDeletedMenuById(tx, id)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error menu not found to restore")
-		return domain.Menu{}, utils.NewNotFoundError("Menu not found to restore")
-	}
+		restoredMenu, err := adapters.MenuRepository.Get(ctx, id)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error failed to get restored menu")
+			return utils.NewInternalError("Failed to get restored menu")
+		}
+		result = restoredMenu
 
-	restoredMenu, err := u.menuRepo.Restore(tx, id)
+		return nil
+	})
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to restore menu")
-		return domain.Menu{}, utils.NewInternalError("Failed to restore menu")
+		return domain.Menu{}, err
 	}
 
-	if err = tx.Commit(); err != nil {
-		logger.Log.WithError(err).Error("Error failed to commit transaction")
-		return domain.Menu{}, utils.NewInternalError("Failed to commit transaction")
-	}
-	return restoredMenu, nil
+	return result, nil
 }

@@ -1,16 +1,17 @@
 package repository
 
 import (
-	"database/sql"
+	"context"
 
+	"github.com/google/uuid"
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
 )
 
 type ReviewRepository interface {
-	GetAllByMenuId(tx *sql.Tx, id string) ([]domain.Review, error)
-	Create(tx *sql.Tx, review domain.Review) (domain.Review, error)
-	GetOneById(tx *sql.Tx, id string) (domain.Review, error)
-	Update(tx *sql.Tx, review domain.Review) (domain.Review, error)
-	CheckReviewedItem(tx *sql.Tx, userId, menuId, orderId string) bool
-	CountReviewByMenuId(tx *sql.Tx, menuId string) (int, float64, error)
+	GetAllByMenuId(ctx context.Context, id uuid.UUID) ([]domain.Review, error)
+	Create(ctx context.Context, review domain.Review) error
+	GetOneById(ctx context.Context, id uuid.UUID) (domain.Review, error)
+	Update(ctx context.Context, id uuid.UUID, review domain.Review) error
+	CheckReviewedItem(ctx context.Context, userId, menuId, orderId uuid.UUID) bool
+	CountReviewByMenuId(ctx context.Context, menuId uuid.UUID) (int, float64, error)
 }

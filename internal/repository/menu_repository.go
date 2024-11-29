@@ -1,18 +1,19 @@
 package repository
 
 import (
-	"database/sql"
+	"context"
 
+	"github.com/google/uuid"
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
 )
 
 type MenuRepository interface {
-	GetAll(tx *sql.Tx) ([]domain.Menu, error)
-	Create(tx *sql.Tx, menu domain.Menu) (domain.Menu, error)
-	Get(tx *sql.Tx, id string) (domain.Menu, error)
-	Update(tx *sql.Tx, menu domain.Menu) (domain.Menu, error)
-	Delete(tx *sql.Tx, id string) error
-	Restore(tx *sql.Tx, id string) (domain.Menu, error)
-	GetDeletedMenuById(tx *sql.Tx, id string) (domain.Menu, error)
-	UpdateRating(tx *sql.Tx, id string, rating float64) error
+	GetAll(ctx context.Context) ([]domain.Menu, error)
+	Create(ctx context.Context, menu domain.Menu) error
+	Get(ctx context.Context, id uuid.UUID) (domain.Menu, error)
+	Update(ctx context.Context, id uuid.UUID, menu domain.Menu) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	Restore(ctx context.Context, id uuid.UUID) error
+	GetDeletedMenuById(ctx context.Context, id uuid.UUID) (domain.Menu, error)
+	UpdateRating(ctx context.Context, id uuid.UUID, rating float64) error
 }
