@@ -88,27 +88,20 @@ func (u *TableUsecaseImpl) Update(ctx context.Context, id uuid.UUID, req dto.Upd
 			return utils.NewNotFoundError("Table not found")
 		}
 
-		table := domain.Table{
-			Number:   req.Number,
-			Capacity: req.Capacity,
-			Location: req.Location,
-			Status:   req.Status,
+		if req.Number != "" {
+			existingTable.Number = req.Number
+		}
+		if req.Capacity != 0 {
+			existingTable.Capacity = req.Capacity
+		}
+		if req.Location != "" {
+			existingTable.Location = req.Location
+		}
+		if req.Status != "" {
+			existingTable.Status = req.Status
 		}
 
-		if table.Number == "" {
-			table.Number = existingTable.Number
-		}
-		if table.Capacity == 0 {
-			table.Capacity = existingTable.Capacity
-		}
-		if table.Location == "" {
-			table.Location = existingTable.Location
-		}
-		if table.Status == "" {
-			table.Status = existingTable.Status
-		}
-
-		err = adapters.TableRepository.Update(ctx, id, table)
+		err = adapters.TableRepository.Update(ctx, id, existingTable)
 		if err != nil {
 			logger.Log.WithError(err).Error("Error failed to update table")
 			return utils.NewInternalError("Failed to update table")

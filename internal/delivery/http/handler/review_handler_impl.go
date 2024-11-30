@@ -6,7 +6,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
@@ -66,14 +65,7 @@ func (h *ReviewHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *ReviewHandlerImpl) GetAllByMenuId(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	idStr := mux.Vars(r)["id"]
-
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error invalid id format")
-		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid id format"))
-		return
-	}
+	id := utils.ValidateIdParam(w, r)
 
 	reviews, err := h.reviewUsecase.GetAllByMenuId(ctx, id)
 	if err != nil {
@@ -87,14 +79,7 @@ func (h *ReviewHandlerImpl) GetAllByMenuId(w http.ResponseWriter, r *http.Reques
 
 func (h *ReviewHandlerImpl) GetOneById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	idStr := mux.Vars(r)["id"]
-
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error invalid id format")
-		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid id format"))
-		return
-	}
+	id := utils.ValidateIdParam(w, r)
 
 	review, err := h.reviewUsecase.GetOneById(ctx, id)
 	if err != nil {
@@ -108,14 +93,7 @@ func (h *ReviewHandlerImpl) GetOneById(w http.ResponseWriter, r *http.Request) {
 
 func (h *ReviewHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	idStr := mux.Vars(r)["id"]
-
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error invalid id format")
-		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid id format"))
-		return
-	}
+	id := utils.ValidateIdParam(w, r)
 
 	var req dto.UpdateReviewRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

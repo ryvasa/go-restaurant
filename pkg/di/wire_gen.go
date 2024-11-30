@@ -54,7 +54,16 @@ func InitializeHandlers() (*handler.Handlers, error) {
 	reservationRepository := repository.NewReservationRepository(repositoryDB)
 	reservationUsecase := usecase.NewReservationUsecase(reservationRepository, tableRepository, transactionRepository)
 	reservationHandlerImpl := handler.NewReservationHandler(reservationUsecase)
-	handlers := handler.NewHandlers(menuHandlerImpl, userHandlerImpl, reviewHandlerImpl, authHandlerImpl, orderHandlerImpl, tableHandlerImpl, reservationHandlerImpl)
+	recipeRepository := repository.NewRecipeRepository(repositoryDB)
+	recipeUsecase := usecase.NewRecipeUsecase(recipeRepository, menuRepository, transactionRepository)
+	recipeHandlerImpl := handler.NewRecipeHandler(recipeUsecase)
+	inventoryRepository := repository.NewInventoryRepository(repositoryDB)
+	inventoryUsecase := usecase.NewInventoryUsecase(inventoryRepository, transactionRepository)
+	inventoryHandlerImpl := handler.NewInventoryHandler(inventoryUsecase)
+	ingredientRepository := repository.NewIngredientRepository(repositoryDB)
+	ingredientUsecase := usecase.NewIngredientUsecase(ingredientRepository, recipeRepository, transactionRepository)
+	ingredientHandlerImpl := handler.NewIngredientHandler(ingredientUsecase)
+	handlers := handler.NewHandlers(menuHandlerImpl, userHandlerImpl, reviewHandlerImpl, authHandlerImpl, orderHandlerImpl, tableHandlerImpl, reservationHandlerImpl, recipeHandlerImpl, inventoryHandlerImpl, ingredientHandlerImpl)
 	return handlers, nil
 }
 
@@ -79,6 +88,12 @@ func ProvideDBConnection(db *sql.DB) repository.DB {
 var tableSet = wire.NewSet(repository.NewTableRepository, usecase.NewTableUsecase, handler.NewTableHandler)
 
 var reservationSet = wire.NewSet(repository.NewReservationRepository, usecase.NewReservationUsecase, handler.NewReservationHandler)
+
+var recipeSet = wire.NewSet(repository.NewRecipeRepository, usecase.NewRecipeUsecase, handler.NewRecipeHandler)
+
+var inventorySet = wire.NewSet(repository.NewInventoryRepository, usecase.NewInventoryUsecase, handler.NewInventoryHandler)
+
+var ingredientSet = wire.NewSet(repository.NewIngredientRepository, usecase.NewIngredientUsecase, handler.NewIngredientHandler)
 
 var txSet = wire.NewSet(repository.NewTransactionRepository)
 

@@ -7,9 +7,9 @@ type CreateUserRequest struct {
 }
 
 type UpdateUserRequest struct {
-	Name     string `json:"name,omitempty" validate:"omitempty,min=3,max=100"`
-	Email    string `json:"email,omitempty" validate:"omitempty,email"`
-	Password string `json:"password,omitempty" validate:"omitempty,min=6,max=100"`
-	Phone    string `json:"phone,omitempty" validate:"omitempty,min=3,max=100"`
-	Role     string `json:"role,omitempty" validate:"omitempty,oneof=admin customer staff"`
+	Name     string  `json:"name,omitempty" validate:"omitempty,min=3,max=100"`
+	Email    string  `json:"email,omitempty" validate:"omitempty,email"`
+	Password string  `json:"password,omitempty" validate:"omitempty,min=6,max=100"`
+	Phone    *string `json:"phone,omitempty" validate:"omitempty,min=3,max=100"`
+	Role     string  `json:"role,omitempty" validate:"omitempty,oneof=admin customer staff"`
 }

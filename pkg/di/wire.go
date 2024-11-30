@@ -64,6 +64,24 @@ var reservationSet = wire.NewSet(
 	handler.NewReservationHandler,
 )
 
+var recipeSet = wire.NewSet(
+	repository.NewRecipeRepository,
+	usecase.NewRecipeUsecase,
+	handler.NewRecipeHandler,
+)
+
+var inventorySet = wire.NewSet(
+	repository.NewInventoryRepository,
+	usecase.NewInventoryUsecase,
+	handler.NewInventoryHandler,
+)
+
+var ingredientSet = wire.NewSet(
+	repository.NewIngredientRepository,
+	usecase.NewIngredientUsecase,
+	handler.NewIngredientHandler,
+)
+
 var txSet = wire.NewSet(
 	repository.NewTransactionRepository,
 )
@@ -88,6 +106,9 @@ func InitializeHandlers() (*handler.Handlers, error) {
 		orderMenuSet,
 		tableSet,
 		reservationSet,
+		recipeSet,
+		inventorySet,
+		ingredientSet,
 		txSet,
 		handler.NewHandlers,
 	)

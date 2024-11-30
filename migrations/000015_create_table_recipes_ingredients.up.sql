@@ -1,0 +1,10 @@
+CREATE TABLE recipes_ingredients (
+    id CHAR(36) PRIMARY KEY,
+    recipe_id CHAR(36) NOT NULL,
+    ingredient_id CHAR(36) NOT NULL,
+    quantity FLOAT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP DEFAULT NULL
+);

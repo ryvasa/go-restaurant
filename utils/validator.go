@@ -2,8 +2,12 @@ package utils
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
+	"github.com/ryvasa/go-restaurant/pkg/logger"
 )
 
 var validate = validator.New()
@@ -39,4 +43,16 @@ func getErrorMsg(fe validator.FieldError) string {
 		return fmt.Sprintf("Nilai harus lebih besar dari %s", fe.Param())
 	}
 	return "Unknown error"
+}
+
+func ValidateIdParam(w http.ResponseWriter, r *http.Request) uuid.UUID {
+	idStr := mux.Vars(r)["id"]
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		logger.Log.WithError(err).Error("Error invalid ID format")
+		HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
+		return uuid.UUID{}
+	}
+	return id
 }

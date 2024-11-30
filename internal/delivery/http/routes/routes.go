@@ -14,4 +14,8 @@ func NewRoutes(public, protected *mux.Router, handlers *handler.Handlers) {
 	OrderRoutes(protected, handlers.OrderHandler)
 	TableRoutes(public, protected, handlers.TableHandler)
 	ReservationRoutes(public, protected, handlers.ReservationHandler)
+	RecipeRoutes(protected, handlers.RecipeHandler)
+	InventoryRoutes(protected, handlers.InventoryHandler)
+	IngredientRoutes(protected, handlers.IngredientHandler)
+
 }

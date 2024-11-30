@@ -6,7 +6,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
@@ -68,14 +67,7 @@ func (h *OrderHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *OrderHandlerImpl) GetOneById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	idStr := mux.Vars(r)["id"]
-
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error invalid id format")
-		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid id format"))
-		return
-	}
+	id := utils.ValidateIdParam(w, r)
 
 	order, err := h.orderUsecase.GetOneById(ctx, id)
 	if err != nil {
@@ -89,19 +81,12 @@ func (h *OrderHandlerImpl) GetOneById(w http.ResponseWriter, r *http.Request) {
 
 func (h *OrderHandlerImpl) UpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	idStr := mux.Vars(r)["id"]
 	var req dto.UpdateOrderStatusDto
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.WithError(err).Error("Error invalid request body")
 		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid request body"))
 	}
-
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error invalid id format")
-		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid id format"))
-		return
-	}
+	id := utils.ValidateIdParam(w, r)
 
 	order, err := h.orderUsecase.UpdateOrderStatus(ctx, id, req)
 	if err != nil {
@@ -115,18 +100,13 @@ func (h *OrderHandlerImpl) UpdateOrderStatus(w http.ResponseWriter, r *http.Requ
 
 func (h *OrderHandlerImpl) UpdatePayment(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	idStr := mux.Vars(r)["id"]
 	var req dto.UpdatePaymentDto
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Log.WithError(err).Error("Error invalid request body")
 		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid request body"))
 	}
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error invalid id format")
-		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid id format"))
-		return
-	}
+	id := utils.ValidateIdParam(w, r)
+
 	order, err := h.orderUsecase.UpdatePayment(ctx, id, req)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to get order")
