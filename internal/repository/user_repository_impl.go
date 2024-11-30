@@ -20,7 +20,8 @@ func NewUserRepository(db DB) UserRepository {
 
 func (r *UserRepositoryImpl) GetAll(ctx context.Context) ([]domain.User, error) {
 	users := []domain.User{}
-	rows, err := r.db.QueryContext(ctx, "SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE deleted = false AND deleted_at IS NULL")
+	query := `SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE deleted = false AND deleted_at IS NULL`
+	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -38,10 +39,14 @@ func (r *UserRepositoryImpl) GetAll(ctx context.Context) ([]domain.User, error) 
 }
 
 func (r *UserRepositoryImpl) Create(ctx context.Context, user domain.User) error {
-	_, err := r.db.ExecContext(ctx, "INSERT INTO users (id,name,email,password,role) VALUES (?, ?,  ?, ?, ?)",
-		user.Id, user.Name, user.Email, user.Password, user.Role)
+	query := `INSERT INTO users (id,name,email,password,role) VALUES (?, ?,  ?, ?, ?)`
+	res, err := r.db.ExecContext(ctx, query, user.Id, user.Name, user.Email, user.Password, user.Role)
 	if err != nil {
 		return err
+	}
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("No rows affected")
 	}
 	return nil
 }
@@ -49,16 +54,8 @@ func (r *UserRepositoryImpl) Create(ctx context.Context, user domain.User) error
 func (r *UserRepositoryImpl) Get(ctx context.Context, id uuid.UUID) (domain.User, error) {
 	user := domain.User{}
 	var phone sql.NullString
-	err := r.db.QueryRowContext(ctx, "SELECT id, name, email, phone, role, created_at, updated_at FROM users WHERE id = ? AND deleted = false AND deleted_at IS NULL",
-		id).Scan(
-		&user.Id,
-		&user.Name,
-		&user.Email,
-		&phone,
-		&user.Role,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
+	query := `SELECT id, name, email, phone, role, created_at, updated_at FROM users WHERE id = ? AND deleted = false AND deleted_at IS NULL`
+	err := r.db.QueryRowContext(ctx, query, id).Scan(&user.Id, &user.Name, &user.Email, &phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		return domain.User{}, err
@@ -74,7 +71,8 @@ func (r *UserRepositoryImpl) Get(ctx context.Context, id uuid.UUID) (domain.User
 }
 
 func (r *UserRepositoryImpl) Update(ctx context.Context, id uuid.UUID, user domain.User) error {
-	res, err := r.db.ExecContext(ctx, "UPDATE users SET name = ?, email = ?, password = ?, phone = ?, role = ? WHERE id = ?",
+	query := `UPDATE users SET name = ?, email = ?, password = ?, phone = ?, role = ? WHERE id = ?`
+	res, err := r.db.ExecContext(ctx, query,
 		user.Name, user.Email, user.Password, user.Phone, user.Role, id)
 	if err != nil {
 		return err
@@ -90,7 +88,8 @@ func (r *UserRepositoryImpl) Update(ctx context.Context, id uuid.UUID, user doma
 
 func (r *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (domain.User, error) {
 	user := domain.User{}
-	err := r.db.QueryRowContext(ctx, "SELECT id,name,password,email,phone,role,created_at,updated_at FROM users WHERE email = ?", email).Scan(&user.Id, &user.Name, &user.Password, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+	query := `SELECT id,name,password,email,phone,role,created_at,updated_at FROM users WHERE email = ?`
+	err := r.db.QueryRowContext(ctx, query, email).Scan(&user.Id, &user.Name, &user.Password, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		return domain.User{}, err
@@ -100,7 +99,8 @@ func (r *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (doma
 }
 
 func (r *UserRepositoryImpl) Delete(ctx context.Context, id uuid.UUID) error {
-	res, err := r.db.ExecContext(ctx, "UPDATE users SET deleted = ?, deleted_at = ? WHERE id = ?", true, time.Now(), id)
+	query := `UPDATE users SET deleted = ?, deleted_at = ? WHERE id = ?`
+	res, err := r.db.ExecContext(ctx, query, true, time.Now(), id)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,8 @@ func (r *UserRepositoryImpl) Delete(ctx context.Context, id uuid.UUID) error {
 }
 
 func (r *UserRepositoryImpl) Restore(ctx context.Context, id uuid.UUID) error {
-	res, err := r.db.ExecContext(ctx, "UPDATE users SET deleted = ?, deleted_at = ? WHERE id = ?", false, nil, id)
+	query := `UPDATE users SET deleted = ?, deleted_at = ? WHERE id = ?`
+	res, err := r.db.ExecContext(ctx, query, false, nil, id)
 	if err != nil {
 		return err
 	}
@@ -129,7 +130,8 @@ func (r *UserRepositoryImpl) Restore(ctx context.Context, id uuid.UUID) error {
 
 func (r *UserRepositoryImpl) GetDeletedUserById(ctx context.Context, id uuid.UUID) (domain.User, error) {
 	user := domain.User{}
-	err := r.db.QueryRowContext(ctx, "SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE deleted = true AND deleted_at IS NOT NULL AND id = ?", id).Scan(&user.Id, &user.Name, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+	query := `SELECT id,name,email,phone,role,created_at,updated_at FROM users WHERE deleted = true AND deleted_at IS NOT NULL AND id = ?`
+	err := r.db.QueryRowContext(ctx, query, id).Scan(&user.Id, &user.Name, &user.Email, &user.Phone, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return domain.User{}, err
 	}

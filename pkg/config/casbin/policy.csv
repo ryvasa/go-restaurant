@@ -4,6 +4,9 @@ p, admin, /api/reviews*, *
 p, admin, /api/orders*, *
 p, admin, /api/tables*, *
 p, admin, /api/reservations*, *
+p, admin, /api/recipes*, *
+p, admin, /api/inventory*, *
+p, admin, /api/ingredients*, *
 
 p, staff, /api/menu*, POST
 p, staff, /api/menu*, GET
@@ -14,6 +17,11 @@ p, staff, /api/reviews*, GET
 p, staff, /api/orders*, *
 p, staff, /api/tables*, *
 p, staff, /api/reservations*, *
+p, staff, /api/recipes*, GET
+p, staff, /api/ingredients*, GET
+p, staff, /api/ingredients/*/restore, PATCH
+
+
 
 p, customer, /api/users*, PATCH
 p, customer, /api/menu*, GET

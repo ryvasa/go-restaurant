@@ -25,25 +25,33 @@ func NewTransactionRepository(db *sql.DB) TransactionRepository {
 }
 
 type Adapters struct {
-	UserRepository        UserRepository
-	MenuRepository        MenuRepository
-	TableRepository       TableRepository
-	ReservationRepository ReservationRepository
-	OrderRepository       OrderRepository
-	OrderMenuRepository   OrderMenuRepository
-	ReviewRepository      ReviewRepository
+	UserRepository             UserRepository
+	MenuRepository             MenuRepository
+	TableRepository            TableRepository
+	ReservationRepository      ReservationRepository
+	OrderRepository            OrderRepository
+	OrderMenuRepository        OrderMenuRepository
+	ReviewRepository           ReviewRepository
+	RecipeRepository           RecipeRepository
+	IngredientRepository       IngredientRepository
+	RecipeIngredientRepository RecipeIngredientRepository
+	InventoryRepository        InventoryRepository
 }
 
 func (p *TransactionRepositoryImpl) Transact(txFunc func(adapters Adapters) error) error {
 	return runInTx(p.db, func(tx *sql.Tx) error {
 		adapters := Adapters{
-			UserRepository:        NewUserRepository(tx),
-			MenuRepository:        NewMenuRepository(tx),
-			TableRepository:       NewTableRepository(tx),
-			ReservationRepository: NewReservationRepository(tx),
-			OrderRepository:       NewOrderRepository(tx),
-			OrderMenuRepository:   NewOrderMenuRepository(tx),
-			ReviewRepository:      NewReviewRepository(tx),
+			UserRepository:             NewUserRepository(tx),
+			MenuRepository:             NewMenuRepository(tx),
+			TableRepository:            NewTableRepository(tx),
+			ReservationRepository:      NewReservationRepository(tx),
+			OrderRepository:            NewOrderRepository(tx),
+			OrderMenuRepository:        NewOrderMenuRepository(tx),
+			ReviewRepository:           NewReviewRepository(tx),
+			RecipeRepository:           NewRecipeRepository(tx),
+			IngredientRepository:       NewIngredientRepository(tx),
+			RecipeIngredientRepository: NewRecipeIngredientRepository(tx),
+			InventoryRepository:        NewInventoryRepository(tx),
 		}
 
 		return txFunc(adapters)

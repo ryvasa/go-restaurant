@@ -1,0 +1,3 @@
+ALTER TABLE recipes_ingredients
+DROP CONSTRAINT fk_recipes_ingredients_recipe,
+DROP CONSTRAINT fk_recipes_ingredients_ingredient;

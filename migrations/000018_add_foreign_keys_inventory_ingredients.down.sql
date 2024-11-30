@@ -1,0 +1,2 @@
+ALTER TABLE inventory
+DROP CONSTRAINT fk_inventory_ingredients_ingredient;

@@ -154,42 +154,33 @@ func (u *ReservationUsecaseImpl) Update(ctx context.Context, id uuid.UUID, req d
 			return utils.NewNotFoundError("Reservation not found")
 		}
 
-		reservation := domain.Reservation{
-			NumberOfGuests: req.NumberOfGuests,
-			Status:         req.Status,
+		if req.Status != "" {
+			existingReservation.Status = req.Status
 		}
-		if req.Status == "" {
-			reservation.Status = existingReservation.Status
-		}
-		if req.NumberOfGuests == 0 {
-			reservation.NumberOfGuests = existingReservation.NumberOfGuests
+		if req.NumberOfGuests != 0 {
+			existingReservation.NumberOfGuests = req.NumberOfGuests
 		}
 
-		if req.ReservationDate == "" {
-			reservation.ReservationDate = existingReservation.ReservationDate
-		} else {
+		if req.ReservationDate != "" {
 			reservationDate, err := time.Parse("2006-01-02", req.ReservationDate)
 			if err != nil {
 				logger.Log.WithError(err).Error("Invalid reservation date format")
 				return utils.NewValidationError("Invalid reservation date format")
 			}
-			reservation.ReservationDate = reservationDate
-
+			existingReservation.ReservationDate = reservationDate
 		}
 
-		if req.ReservationTime == "" {
-			reservation.ReservationTime = existingReservation.ReservationTime
-		} else {
+		if req.ReservationTime != "" {
 			reservationTime, err := time.Parse("15:04:05", req.ReservationTime)
 			if err != nil {
 				logger.Log.WithError(err).Error("Invalid reservation time format")
 				return utils.NewValidationError("Invalid reservation time format")
 			}
-			reservation.ReservationTime =
-				reservationTime.Format("15:04:05")
+			existingReservation.ReservationTime = reservationTime.Format("15:04:05")
+
 		}
 
-		err = adapters.ReservationRepository.Update(ctx, id, reservation)
+		err = adapters.ReservationRepository.Update(ctx, id, existingReservation)
 		if err != nil {
 			logger.Log.WithError(err).Error("Error failed to update reservation")
 			return utils.NewInternalError("Failed to update reservation")

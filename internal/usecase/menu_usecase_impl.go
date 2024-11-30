@@ -95,41 +95,29 @@ func (u *MenuUsecaseImpl) Update(ctx context.Context, id uuid.UUID, req dto.Upda
 			return utils.NewNotFoundError("Menu not found")
 		}
 
-		menu := domain.Menu{
-			Name:        req.Name,
-			Price:       req.Price,
-			Description: req.Description,
-			Category:    req.Category,
-			ImageURL:    existingMenu.ImageURL,
-		}
-
 		if file != nil && req.Image != nil {
 			imagePath, err := utils.UploadFile(file, req.Image, "menu")
 			if err != nil {
 				logger.Log.WithError(err).Error("Error uploading file")
 				return utils.NewInternalError("Failed to upload image")
 			}
-			menu.ImageURL = imagePath
+			existingMenu.ImageURL = imagePath
 		}
 
-		if req.Name == "" {
-			menu.Name = existingMenu.Name
+		if req.Name != "" {
+			existingMenu.Name = req.Name
 		}
-		if req.Description == "" {
-			menu.Description = existingMenu.Description
+		if req.Description != "" {
+			existingMenu.Description = req.Description
 		}
-		if req.Price == 0 {
-			menu.Price = existingMenu.Price
+		if req.Price != 0 {
+			existingMenu.Price = req.Price
 		}
-		if req.Category == "" {
-			menu.Category = existingMenu.Category
-		}
-
-		if menu.ImageURL == "" {
-			menu.ImageURL = existingMenu.ImageURL
+		if req.Category != "" {
+			existingMenu.Category = req.Category
 		}
 
-		err = adapters.MenuRepository.Update(ctx, id, menu)
+		err = adapters.MenuRepository.Update(ctx, id, existingMenu)
 		if err != nil {
 			logger.Log.WithError(err).Error("Error failed to update menu")
 			return utils.NewInternalError("Failed to update menu")

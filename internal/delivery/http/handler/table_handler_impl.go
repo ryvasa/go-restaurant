@@ -2,11 +2,8 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
-	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
@@ -60,14 +57,7 @@ func (h *TableHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 func (h *TableHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	idStr := mux.Vars(r)["id"]
-
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error invalid ID format")
-		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
-		return
-	}
+	id := utils.ValidateIdParam(w, r)
 
 	table, err := h.tableUsecase.GetOneById(ctx, id)
 	if err != nil {
@@ -81,14 +71,7 @@ func (h *TableHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 func (h *TableHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	idStr := mux.Vars(r)["id"]
-
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error invalid ID format")
-		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
-		return
-	}
+	id := utils.ValidateIdParam(w, r)
 
 	var req dto.UpdateTableRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -110,16 +93,9 @@ func (h *TableHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 func (h *TableHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	idStr := mux.Vars(r)["id"]
+	id := utils.ValidateIdParam(w, r)
 
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error invalid ID format")
-		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
-		return
-	}
-
-	err = h.tableUsecase.Delete(ctx, id)
+	err := h.tableUsecase.Delete(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to delete table")
 		utils.HttpResponse(w, utils.GetErrorStatus(err), nil, err)
@@ -133,14 +109,7 @@ func (h *TableHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 func (h *TableHandlerImpl) Restore(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	idStr := mux.Vars(r)["id"]
-
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		logger.Log.WithError(err).Error("Error invalid ID format")
-		utils.HttpResponse(w, http.StatusBadRequest, nil, fmt.Errorf("invalid ID format: %w", err))
-		return
-	}
+	id := utils.ValidateIdParam(w, r)
 
 	table, err := h.tableUsecase.Restore(ctx, id)
 	if err != nil {

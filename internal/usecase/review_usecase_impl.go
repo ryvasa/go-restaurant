@@ -129,20 +129,14 @@ func (u *ReviewUsecaseImpl) Update(ctx context.Context, id, userId uuid.UUID, re
 			return utils.NewUnauthorizedError("You cannot update a review")
 		}
 
-		review := domain.Review{
-			Id:      id,
-			Rating:  req.Rating,
-			Comment: req.Comment,
+		if req.Rating != 0 {
+			existingReview.Rating = req.Rating
+		}
+		if req.Comment != "" {
+			existingReview.Comment = req.Comment
 		}
 
-		if req.Rating == 0 {
-			review.Rating = existingReview.Rating
-		}
-		if req.Comment == "" {
-			review.Comment = existingReview.Comment
-		}
-
-		err = adapters.ReviewRepository.Update(ctx, id, review)
+		err = adapters.ReviewRepository.Update(ctx, id, existingReview)
 		if err != nil {
 			logger.Log.WithError(err).Error("Error failed to update review")
 			return utils.NewInternalError("Failed to update review")

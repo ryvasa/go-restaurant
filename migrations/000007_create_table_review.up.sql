@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS review (
+CREATE TABLE IF NOT EXISTS reviews (
     id CHAR(36) PRIMARY KEY,
     rating INT NOT NULL,
     comment TEXT NOT NULL,

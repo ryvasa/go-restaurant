@@ -112,48 +112,34 @@ func (u *UserUsecaseImpl) Update(ctx context.Context, id, authId uuid.UUID, req 
 			return utils.NewNotFoundError("User not found")
 		}
 
-		user := domain.User{
-			Name:  req.Name,
-			Email: req.Email,
-			Role:  req.Role,
-			Phone: &req.Phone,
+		if req.Name != "" {
+			existingUser.Name = req.Name
+		}
+		if req.Phone != nil {
+			existingUser.Phone = req.Phone
+		}
+		if req.Role != "" {
+			existingUser.Role = req.Role
 		}
 
-		if req.Name == "" {
-			user.Name = existingUser.Name
-		}
-		if req.Phone == "" {
-			user.Phone = existingUser.Phone
-		}
-		if req.Role == "" {
-			user.Role = existingUser.Role
-		}
-		if req.Email == "" {
-			user.Email = existingUser.Email
-		} else {
+		if req.Email != "" {
 			existingUserWithEmail, err := adapters.UserRepository.GetByEmail(ctx, req.Email)
-			if err != nil {
-				logger.Log.WithError(err).Error("Error user not found")
-				return utils.NewNotFoundError("User not found")
-			}
 			if existingUserWithEmail.Email == req.Email {
 				logger.Log.WithError(err).Error("Error email already exists")
 				return utils.NewConflictError("Email already exists")
 			}
+			existingUser.Email = req.Email
 		}
-
 		if req.Password != "" {
 			hashedPassword, err := utils.HashPassword(req.Password)
 			if err != nil {
 				logger.Log.WithError(err).Error("Error failed to hash password")
 				return utils.NewInternalError("Failed to hash password")
 			}
-			user.Password = hashedPassword
-		} else {
-			user.Password = existingUser.Password
+			existingUser.Password = hashedPassword
 		}
 
-		err = adapters.UserRepository.Update(ctx, id, user)
+		err = adapters.UserRepository.Update(ctx, id, existingUser)
 		if err != nil {
 			logger.Log.WithError(err).Error("Error failed to update user")
 			return utils.NewInternalError("Failed to update user")
