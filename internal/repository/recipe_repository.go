@@ -15,4 +15,5 @@ type RecipeRepository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 	Restore(ctx context.Context, id uuid.UUID) error
 	GetDeletedById(ctx context.Context, id uuid.UUID) (domain.Recipe, error)
+	GetOneByMenuId(ctx context.Context, menuId uuid.UUID) (domain.Recipe, error)
 }

@@ -15,4 +15,5 @@ type InventoryUsecase interface {
 	Update(ctx context.Context, id uuid.UUID, req dto.UpdateInventoryRequest) (domain.Inventory, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	Restore(ctx context.Context, id uuid.UUID) (domain.Inventory, error)
+	CalculateMenuPortions(ctx context.Context, menuId uuid.UUID) (domain.InventoryMenu, error)
 }

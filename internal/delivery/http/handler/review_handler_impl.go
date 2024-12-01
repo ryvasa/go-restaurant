@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
@@ -65,7 +66,9 @@ func (h *ReviewHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *ReviewHandlerImpl) GetAllByMenuId(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	reviews, err := h.reviewUsecase.GetAllByMenuId(ctx, id)
 	if err != nil {
@@ -79,7 +82,9 @@ func (h *ReviewHandlerImpl) GetAllByMenuId(w http.ResponseWriter, r *http.Reques
 
 func (h *ReviewHandlerImpl) GetOneById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	review, err := h.reviewUsecase.GetOneById(ctx, id)
 	if err != nil {
@@ -93,7 +98,9 @@ func (h *ReviewHandlerImpl) GetOneById(w http.ResponseWriter, r *http.Request) {
 
 func (h *ReviewHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	var req dto.UpdateReviewRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
@@ -67,7 +68,9 @@ func (h *OrderHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *OrderHandlerImpl) GetOneById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	order, err := h.orderUsecase.GetOneById(ctx, id)
 	if err != nil {
@@ -86,7 +89,9 @@ func (h *OrderHandlerImpl) UpdateOrderStatus(w http.ResponseWriter, r *http.Requ
 		logger.Log.WithError(err).Error("Error invalid request body")
 		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid request body"))
 	}
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	order, err := h.orderUsecase.UpdateOrderStatus(ctx, id, req)
 	if err != nil {
@@ -105,7 +110,9 @@ func (h *OrderHandlerImpl) UpdatePayment(w http.ResponseWriter, r *http.Request)
 		logger.Log.WithError(err).Error("Error invalid request body")
 		utils.HttpResponse(w, http.StatusBadRequest, nil, utils.NewValidationError("Invalid request body"))
 	}
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	order, err := h.orderUsecase.UpdatePayment(ctx, id, req)
 	if err != nil {

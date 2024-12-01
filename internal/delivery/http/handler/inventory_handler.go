@@ -9,4 +9,5 @@ type InventoryHandler interface {
 	Update(w http.ResponseWriter, r *http.Request)
 	Delete(w http.ResponseWriter, r *http.Request)
 	Restore(w http.ResponseWriter, r *http.Request)
+	CalculateMenuPortions(w http.ResponseWriter, r *http.Request)
 }

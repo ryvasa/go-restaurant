@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
 )
 
@@ -45,9 +44,7 @@ func getErrorMsg(fe validator.FieldError) string {
 	return "Unknown error"
 }
 
-func ValidateIdParam(w http.ResponseWriter, r *http.Request) uuid.UUID {
-	idStr := mux.Vars(r)["id"]
-
+func ValidateIdParam(w http.ResponseWriter, r *http.Request, idStr string) uuid.UUID {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error invalid ID format")

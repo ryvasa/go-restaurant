@@ -118,3 +118,14 @@ func (r *RecipeRepositoryImpl) GetDeletedById(ctx context.Context, id uuid.UUID)
 	}
 	return recipe, nil
 }
+
+func (r *RecipeRepositoryImpl) GetOneByMenuId(ctx context.Context, menuId uuid.UUID) (domain.Recipe, error) {
+	recipe := domain.Recipe{}
+	query := `SELECT id, menu_id, name, description, created_at, updated_at FROM recipes WHERE menu_id = ? AND deleted = false AND deleted_at IS NULL`
+	err := r.db.QueryRowContext(ctx, query, menuId).Scan(&recipe.Id, &recipe.MenuId, &recipe.Name, &recipe.Description, &recipe.CreatedAt, &recipe.UpdatedAt)
+	if err != nil {
+		logger.Log.Error(err)
+		return domain.Recipe{}, err
+	}
+	return recipe, nil
+}

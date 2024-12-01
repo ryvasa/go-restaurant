@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
@@ -57,7 +58,9 @@ func (h *TableHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 func (h *TableHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	table, err := h.tableUsecase.GetOneById(ctx, id)
 	if err != nil {
@@ -71,7 +74,9 @@ func (h *TableHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 func (h *TableHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	var req dto.UpdateTableRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -93,7 +98,9 @@ func (h *TableHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 func (h *TableHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	err := h.tableUsecase.Delete(ctx, id)
 	if err != nil {
@@ -109,7 +116,9 @@ func (h *TableHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 func (h *TableHandlerImpl) Restore(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	table, err := h.tableUsecase.Restore(ctx, id)
 	if err != nil {

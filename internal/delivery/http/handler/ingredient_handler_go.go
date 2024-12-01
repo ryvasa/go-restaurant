@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
@@ -22,7 +23,9 @@ func NewIngredientHandler(ingredientUsecase usecase.IngredientUsecase) *Ingredie
 
 func (h *IngredientHandlerImpl) GetOneById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 	ingredient, err := h.ingredientUsecase.GetOneById(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to get ingredient")
@@ -35,7 +38,9 @@ func (h *IngredientHandlerImpl) GetOneById(w http.ResponseWriter, r *http.Reques
 
 func (h *IngredientHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	var req dto.UpdateIngredientRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -54,7 +59,9 @@ func (h *IngredientHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *IngredientHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	err := h.ingredientUsecase.Delete(ctx, id)
 	if err != nil {
@@ -70,7 +77,9 @@ func (h *IngredientHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 
 func (h *IngredientHandlerImpl) Restore(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	ingredient, err := h.ingredientUsecase.Restore(ctx, id)
 	if err != nil {

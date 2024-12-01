@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
@@ -81,7 +82,9 @@ func (h *MenuHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *MenuHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	menu, err := h.menuUsecase.Get(ctx, id)
 
@@ -96,7 +99,9 @@ func (h *MenuHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 
 func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	// Parse multipart form
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
@@ -143,7 +148,9 @@ func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *MenuHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	err := h.menuUsecase.Delete(ctx, id)
 	if err != nil {
@@ -158,7 +165,9 @@ func (h *MenuHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 
 func (h *MenuHandlerImpl) Restore(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	menu, err := h.menuUsecase.Restore(ctx, id)
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
@@ -39,7 +40,9 @@ func (h *UserHandlerImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 	user, err := h.userUsecase.Get(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to find user")
@@ -75,7 +78,9 @@ func (h *UserHandlerImpl) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *UserHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	claims, ok := ctx.Value("user").(jwt.MapClaims)
 	if !ok {
@@ -119,7 +124,9 @@ func (h *UserHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *UserHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	err := h.userUsecase.Delete(ctx, id)
 	if err != nil {
@@ -134,7 +141,9 @@ func (h *UserHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 
 func (h *UserHandlerImpl) Restore(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	user, err := h.userUsecase.Restore(ctx, id)
 	if err != nil {
