@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"math"
 
 	"github.com/google/uuid"
 	"github.com/ryvasa/go-restaurant/internal/model/domain"
@@ -172,5 +173,57 @@ func (u *InventoryUsecaseImpl) Restore(ctx context.Context, id uuid.UUID) (domai
 	if err != nil {
 		return result, err
 	}
+	return result, nil
+}
+
+func (u *InventoryUsecaseImpl) CalculateMenuPortions(ctx context.Context, menuId uuid.UUID) (domain.InventoryMenu, error) {
+	result := domain.InventoryMenu{}
+	err := u.txRepo.Transact(func(adapters repository.Adapters) error {
+		menu, err := adapters.MenuRepository.Get(ctx, menuId)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error getting Menu")
+			return utils.NewNotFoundError("Menu not found")
+		}
+		result.Menu = menu
+
+		recipe, err := adapters.RecipeRepository.GetOneByMenuId(ctx, menuId)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error getting Recipe")
+			return utils.NewNotFoundError("Recipe not found")
+		}
+		result.Recipe = recipe
+
+		recipeIngredients, err := adapters.RecipeIngredientRepository.GetIngredientsByRecipeId(ctx, recipe.Id)
+		if err != nil {
+			logger.Log.WithError(err).Error("Error getting Ingredients")
+			return utils.NewInternalError("Failed to get ingredients")
+		}
+		result.Ingredients = recipeIngredients
+
+		for _, recipeIngredient := range recipeIngredients {
+			inventory, err := adapters.InventoryRepository.GetOneByIngredientId(ctx, recipeIngredient.IngredientId)
+			if err != nil {
+				logger.Log.WithError(err).Error("Error getting Inventory")
+				return utils.NewInternalError("Failed to get inventory")
+			}
+
+			if recipeIngredient.Quantity > 0 {
+				var minPortions float64 = math.MaxFloat64
+				maxPortions := inventory.Quantity / recipeIngredient.Quantity
+
+				result.TotalPortions = math.Floor(math.Min(minPortions, maxPortions))
+			} else {
+				return utils.NewInternalError("Invalid ingredient quantity in recipe")
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		logger.Log.WithError(err).Error("Error calculating menu portions")
+		return result, err
+	}
+
 	return result, nil
 }

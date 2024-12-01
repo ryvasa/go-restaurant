@@ -12,5 +12,5 @@ func InventoryRoutes(protected *mux.Router, handler handler.InventoryHandler) {
 	protected.HandleFunc("/inventory/{id}", handler.Update).Methods("PATCH")
 	protected.HandleFunc("/inventory/{id}", handler.Delete).Methods("DELETE")
 	protected.HandleFunc("/inventory/{id}/restore", handler.Restore).Methods("PATCH")
-
+	protected.HandleFunc("/inventory/menu/{menu_id}", handler.CalculateMenuPortions).Methods("GET")
 }

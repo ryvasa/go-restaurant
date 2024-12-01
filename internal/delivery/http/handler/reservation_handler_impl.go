@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/gorilla/mux"
 	"github.com/ryvasa/go-restaurant/internal/model/dto"
 	"github.com/ryvasa/go-restaurant/internal/usecase"
 	"github.com/ryvasa/go-restaurant/pkg/logger"
@@ -36,7 +37,9 @@ func (h *ReservationHandlerImpl) GetAll(w http.ResponseWriter, r *http.Request) 
 func (h *ReservationHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	reservation, err := h.reservationUsecase.GetOneById(ctx, id)
 	if err != nil {
@@ -94,7 +97,9 @@ func (h *ReservationHandlerImpl) Update(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	updatedReservation, err := h.reservationUsecase.Update(ctx, id, req)
 	if err != nil {
@@ -108,7 +113,9 @@ func (h *ReservationHandlerImpl) Update(w http.ResponseWriter, r *http.Request) 
 
 func (h *ReservationHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	err := h.reservationUsecase.Delete(ctx, id)
 	if err != nil {
@@ -124,7 +131,9 @@ func (h *ReservationHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) 
 
 func (h *ReservationHandlerImpl) Restore(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := utils.ValidateIdParam(w, r)
+	idStr := mux.Vars(r)["id"]
+
+	id := utils.ValidateIdParam(w, r,idStr)
 
 	reservation, err := h.reservationUsecase.Restore(ctx, id)
 	if err != nil {
