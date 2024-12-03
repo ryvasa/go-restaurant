@@ -15,7 +15,7 @@ type TableHandlerImpl struct {
 	tableUsecase usecase.TableUsecase
 }
 
-func NewTableHandler(tableUsecase usecase.TableUsecase) *TableHandlerImpl {
+func NewTableHandler(tableUsecase usecase.TableUsecase) TableHandler {
 	return &TableHandlerImpl{
 		tableUsecase: tableUsecase,
 	}
@@ -60,7 +60,7 @@ func (h *TableHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	table, err := h.tableUsecase.GetOneById(ctx, id)
 	if err != nil {
@@ -76,7 +76,7 @@ func (h *TableHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	var req dto.UpdateTableRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -100,7 +100,7 @@ func (h *TableHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	err := h.tableUsecase.Delete(ctx, id)
 	if err != nil {
@@ -118,7 +118,7 @@ func (h *TableHandlerImpl) Restore(w http.ResponseWriter, r *http.Request) {
 
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	table, err := h.tableUsecase.Restore(ctx, id)
 	if err != nil {

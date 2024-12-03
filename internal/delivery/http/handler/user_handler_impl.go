@@ -18,7 +18,7 @@ type UserHandlerImpl struct {
 	userUsecase usecase.UserUsecase
 }
 
-func NewUserHandler(userUsecase usecase.UserUsecase) *UserHandlerImpl {
+func NewUserHandler(userUsecase usecase.UserUsecase) UserHandler {
 	return &UserHandlerImpl{
 		userUsecase: userUsecase,
 	}
@@ -42,7 +42,7 @@ func (h *UserHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 	user, err := h.userUsecase.Get(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to find user")
@@ -80,7 +80,7 @@ func (h *UserHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	claims, ok := ctx.Value("user").(jwt.MapClaims)
 	if !ok {
@@ -126,7 +126,7 @@ func (h *UserHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	err := h.userUsecase.Delete(ctx, id)
 	if err != nil {
@@ -143,7 +143,7 @@ func (h *UserHandlerImpl) Restore(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	user, err := h.userUsecase.Restore(ctx, id)
 	if err != nil {

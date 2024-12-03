@@ -1,29 +1,29 @@
 package handler
 
 type Handlers struct {
-	MenuHandler        *MenuHandlerImpl
-	UserHandler        *UserHandlerImpl
-	ReviewHandler      *ReviewHandlerImpl
-	AuthHandler        *AuthHandlerImpl
-	OrderHandler       *OrderHandlerImpl
-	TableHandler       *TableHandlerImpl
-	ReservationHandler *ReservationHandlerImpl
-	RecipeHandler      *RecipeHandlerImpl
-	InventoryHandler   *InventoryHandlerImpl
-	IngredientHandler  *IngredientHandlerImpl
+	MenuHandler        MenuHandler
+	UserHandler        UserHandler
+	ReviewHandler      ReviewHandler
+	AuthHandler        AuthHandler
+	OrderHandler       OrderHandler
+	TableHandler       TableHandler
+	ReservationHandler ReservationHandler
+	RecipeHandler      RecipeHandler
+	InventoryHandler   InventoryHandler
+	IngredientHandler  IngredientHandler
 }
 
 func NewHandlers(
-	menuHandler *MenuHandlerImpl,
-	userHandler *UserHandlerImpl,
-	reviewHandler *ReviewHandlerImpl,
-	authHandler *AuthHandlerImpl,
-	orderHandler *OrderHandlerImpl,
-	tableHandler *TableHandlerImpl,
-	reservationHandler *ReservationHandlerImpl,
-	recipeHandler *RecipeHandlerImpl,
-	inventoryHandler *InventoryHandlerImpl,
-	ingIngredientHandler *IngredientHandlerImpl,
+	menuHandler MenuHandler,
+	userHandler UserHandler,
+	reviewHandler ReviewHandler,
+	authHandler AuthHandler,
+	orderHandler OrderHandler,
+	tableHandler TableHandler,
+	reservationHandler ReservationHandler,
+	recipeHandler RecipeHandler,
+	inventoryHandler InventoryHandler,
+	ingIngredientHandler IngredientHandler,
 
 ) *Handlers {
 	return &Handlers{

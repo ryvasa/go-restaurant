@@ -15,7 +15,7 @@ type IngredientHandlerImpl struct {
 	ingredientUsecase usecase.IngredientUsecase
 }
 
-func NewIngredientHandler(ingredientUsecase usecase.IngredientUsecase) *IngredientHandlerImpl {
+func NewIngredientHandler(ingredientUsecase usecase.IngredientUsecase) IngredientHandler {
 	return &IngredientHandlerImpl{
 		ingredientUsecase: ingredientUsecase,
 	}
@@ -25,7 +25,7 @@ func (h *IngredientHandlerImpl) GetOneById(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 	ingredient, err := h.ingredientUsecase.GetOneById(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to get ingredient")
@@ -40,7 +40,7 @@ func (h *IngredientHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	var req dto.UpdateIngredientRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -61,7 +61,7 @@ func (h *IngredientHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	err := h.ingredientUsecase.Delete(ctx, id)
 	if err != nil {
@@ -79,7 +79,7 @@ func (h *IngredientHandlerImpl) Restore(w http.ResponseWriter, r *http.Request) 
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	ingredient, err := h.ingredientUsecase.Restore(ctx, id)
 	if err != nil {
