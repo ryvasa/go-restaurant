@@ -14,7 +14,7 @@ type AuthHandlerImpl struct {
 	authUsecase usecase.AuthUsecase
 }
 
-func NewAuthHandler(authUsecase usecase.AuthUsecase) *AuthHandlerImpl {
+func NewAuthHandler(authUsecase usecase.AuthUsecase) AuthHandler {
 	return &AuthHandlerImpl{
 		authUsecase: authUsecase,
 	}

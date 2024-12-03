@@ -15,7 +15,7 @@ type RecipeHandlerImpl struct {
 	recipeUsecase usecase.RecipeUsecase
 }
 
-func NewRecipeHandler(recipeUsecase usecase.RecipeUsecase) *RecipeHandlerImpl {
+func NewRecipeHandler(recipeUsecase usecase.RecipeUsecase) RecipeHandler {
 	return &RecipeHandlerImpl{
 		recipeUsecase: recipeUsecase,
 	}
@@ -57,7 +57,7 @@ func (h *RecipeHandlerImpl) GetOneById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 	recipe, err := h.recipeUsecase.GetOneById(ctx, id)
 	if err != nil {
 		logger.Log.WithError(err).Error("Error failed to get recipe")
@@ -72,7 +72,7 @@ func (h *RecipeHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	var req dto.UpdateRecipeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -95,7 +95,7 @@ func (h *RecipeHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	err := h.recipeUsecase.Delete(ctx, id)
 	if err != nil {
@@ -114,7 +114,7 @@ func (h *RecipeHandlerImpl) Restore(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	recipe, err := h.recipeUsecase.Restore(ctx, id)
 	if err != nil {

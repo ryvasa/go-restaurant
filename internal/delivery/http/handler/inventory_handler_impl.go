@@ -15,7 +15,7 @@ type InventoryHandlerImpl struct {
 	invetoryUsecase usecase.InventoryUsecase
 }
 
-func NewInventoryHandler(invetoryUsecase usecase.InventoryUsecase) *InventoryHandlerImpl {
+func NewInventoryHandler(invetoryUsecase usecase.InventoryUsecase) InventoryHandler {
 	return &InventoryHandlerImpl{
 		invetoryUsecase: invetoryUsecase,
 	}

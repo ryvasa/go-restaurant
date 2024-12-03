@@ -17,7 +17,7 @@ type OrderHandlerImpl struct {
 	orderUsecase usecase.OrderUsecase
 }
 
-func NewOrderHandler(orderUsecase usecase.OrderUsecase) *OrderHandlerImpl {
+func NewOrderHandler(orderUsecase usecase.OrderUsecase) OrderHandler {
 	return &OrderHandlerImpl{
 		orderUsecase: orderUsecase,
 	}
@@ -70,7 +70,7 @@ func (h *OrderHandlerImpl) GetOneById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	order, err := h.orderUsecase.GetOneById(ctx, id)
 	if err != nil {
@@ -91,7 +91,7 @@ func (h *OrderHandlerImpl) UpdateOrderStatus(w http.ResponseWriter, r *http.Requ
 	}
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	order, err := h.orderUsecase.UpdateOrderStatus(ctx, id, req)
 	if err != nil {
@@ -112,7 +112,7 @@ func (h *OrderHandlerImpl) UpdatePayment(w http.ResponseWriter, r *http.Request)
 	}
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	order, err := h.orderUsecase.UpdatePayment(ctx, id, req)
 	if err != nil {

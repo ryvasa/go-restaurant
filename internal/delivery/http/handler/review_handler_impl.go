@@ -17,7 +17,7 @@ type ReviewHandlerImpl struct {
 	reviewUsecase usecase.ReviewUsecase
 }
 
-func NewReviewHandler(reviewUsecase usecase.ReviewUsecase) *ReviewHandlerImpl {
+func NewReviewHandler(reviewUsecase usecase.ReviewUsecase) ReviewHandler {
 	return &ReviewHandlerImpl{
 		reviewUsecase: reviewUsecase,
 	}
@@ -68,7 +68,7 @@ func (h *ReviewHandlerImpl) GetAllByMenuId(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	reviews, err := h.reviewUsecase.GetAllByMenuId(ctx, id)
 	if err != nil {
@@ -84,7 +84,7 @@ func (h *ReviewHandlerImpl) GetOneById(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	review, err := h.reviewUsecase.GetOneById(ctx, id)
 	if err != nil {
@@ -100,7 +100,7 @@ func (h *ReviewHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	var req dto.UpdateReviewRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

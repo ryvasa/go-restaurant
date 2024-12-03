@@ -16,7 +16,7 @@ type MenuHandlerImpl struct {
 	menuUsecase usecase.MenuUsecase
 }
 
-func NewMenuHandler(menuUsecase usecase.MenuUsecase) *MenuHandlerImpl {
+func NewMenuHandler(menuUsecase usecase.MenuUsecase) MenuHandler {
 	return &MenuHandlerImpl{
 		menuUsecase: menuUsecase,
 	}
@@ -84,7 +84,7 @@ func (h *MenuHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	menu, err := h.menuUsecase.Get(ctx, id)
 
@@ -101,7 +101,7 @@ func (h *MenuHandlerImpl) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	// Parse multipart form
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
@@ -150,7 +150,7 @@ func (h *MenuHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	err := h.menuUsecase.Delete(ctx, id)
 	if err != nil {
@@ -167,7 +167,7 @@ func (h *MenuHandlerImpl) Restore(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	menu, err := h.menuUsecase.Restore(ctx, id)
 	if err != nil {

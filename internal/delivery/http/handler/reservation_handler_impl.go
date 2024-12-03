@@ -16,7 +16,7 @@ type ReservationHandlerImpl struct {
 	reservationUsecase usecase.ReservationUsecase
 }
 
-func NewReservationHandler(reservationUsecase usecase.ReservationUsecase) *ReservationHandlerImpl {
+func NewReservationHandler(reservationUsecase usecase.ReservationUsecase) ReservationHandler {
 	return &ReservationHandlerImpl{
 		reservationUsecase: reservationUsecase,
 	}
@@ -39,7 +39,7 @@ func (h *ReservationHandlerImpl) Get(w http.ResponseWriter, r *http.Request) {
 
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	reservation, err := h.reservationUsecase.GetOneById(ctx, id)
 	if err != nil {
@@ -99,7 +99,7 @@ func (h *ReservationHandlerImpl) Update(w http.ResponseWriter, r *http.Request) 
 
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	updatedReservation, err := h.reservationUsecase.Update(ctx, id, req)
 	if err != nil {
@@ -115,7 +115,7 @@ func (h *ReservationHandlerImpl) Delete(w http.ResponseWriter, r *http.Request) 
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	err := h.reservationUsecase.Delete(ctx, id)
 	if err != nil {
@@ -133,7 +133,7 @@ func (h *ReservationHandlerImpl) Restore(w http.ResponseWriter, r *http.Request)
 	ctx := r.Context()
 	idStr := mux.Vars(r)["id"]
 
-	id := utils.ValidateIdParam(w, r,idStr)
+	id := utils.ValidateIdParam(w, r, idStr)
 
 	reservation, err := h.reservationUsecase.Restore(ctx, id)
 	if err != nil {
