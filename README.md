@@ -13,6 +13,11 @@ Rollback migration
 migrate -path migrations/ -database ${DATABASE} -verbose down
 ```
 
+Run Application
+``` bash
+go run cmd/main.go
+```
+
 Run Application with nodemon
 ``` bash
 nodemon --exec go run cmd/main.go --signal SIGTERM
